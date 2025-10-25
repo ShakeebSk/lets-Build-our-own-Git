@@ -155,10 +155,13 @@ class GitObject:
 
         return cls(obj_type, content)
 
+
 """ 
 The BLOB class represents a blob object in Git.
 it inherits from the GitObject class, which provides basic functionality for Git objects such as hashing and serialization.
 """
+
+
 class Blob(GitObject):
     def __init__(self, content):
         super().__init__("blob", content)
@@ -191,49 +194,52 @@ It looks for the null byte (\0) to separate the mode and name from the hash.
 It decodes the mode and name from bytes to strings and converts the hash from bytes to hexadecimal.
 It appends each parsed entry as a tuple to the entries attribute of the Tree object.
 """
+
+
 class Tree(GitObject):
-    def __init__(self, entries:List[Tuple[str, str, str]] = None):
-        self.entries = entries  or []# List of (mode, name, hash)
+    def __init__(self, entries: List[Tuple[str, str, str]] = None):
+        self.entries = entries or []  # List of (mode, name, hash)
         content = self._serialize_entries()
         super().__init__("tree", content)
-        
+
     def _serialize_entries(self) -> bytes:
-        #<mode> <name>\0<hash>
+        # <mode> <name>\0<hash>
         content = b""
-        for mode, name ,obj_hash in sorted(self.entries):
-            content += f"{mode} {name}\0".encode() 
+        for mode, name, obj_hash in sorted(self.entries):
+            content += f"{mode} {name}\0".encode()
             content += bytes.fromhex(obj_hash)
         return content
-    
-    def add_entry(self, mode:str, name:str, obj_hash:str) -> None:
+
+    def add_entry(self, mode: str, name: str, obj_hash: str) -> None:
         self.entries.append((mode, name, obj_hash))
         self.content = self._serialize_entries()
-        
+
     @classmethod
-    def from_content(cls, content:bytes) -> Tree:
+    def from_content(cls, content: bytes) -> Tree:
         tree = cls()
-        i=0
+        i = 0
         while i < len(content):
             # parse name
             null_idx = content.find(b"\0", i)
             if null_idx == -1:
                 break
-            
+
             mode_name = content[i:null_idx].decode()
-            mode,name = mode_name.split(" ",1) # split only on the first space
-            
+            mode, name = mode_name.split(" ", 1)  # split only on the first space
+
             # parse hash
-            obj_hash = content[null_idx+1:null_idx+21].hex() # 20 bytes for SHA-1 hash 
-            tree.entries.append((mode,name,obj_hash))
+            obj_hash = content[
+                null_idx + 1 : null_idx + 21
+            ].hex()  # 20 bytes for SHA-1 hash
+            tree.entries.append((mode, name, obj_hash))
             i = null_idx + 21
             # parse mode
             # space_idx = content.find(b" ", i)
             # mode = content[i:space_idx].decode()
             # i = space_idx + 1
-            
+
         return tree
-            
-            
+
 
 """ 
 The Class Commit represents a commit object in Git.
@@ -252,8 +258,18 @@ The Commit class has the following methods:
 - from_content: A class method that creates a Commit object from a byte string representation of the commit data.
 
 """
+
+
 class Commit(GitObject):
-    def __init__(self, tree_hash: str, parent_hashes: List[str], author: str,committer:str, message: str,timestamp:int = None):
+    def __init__(
+        self,
+        tree_hash: str,
+        parent_hashes: List[str],
+        author: str,
+        committer: str,
+        message: str,
+        timestamp: int = None,
+    ):
         self.tree_hash = tree_hash
         self.parent_hashes = parent_hashes
         self.author = author
@@ -276,8 +292,7 @@ class Commit(GitObject):
     #     lines.append("")  # blank line before commit message
     #     lines.append(message)
     #     return "\n".join(lines).encode()
-    
-    
+
     """   
     Serialize the commit object to a byte string.
     the parent hashes are serialized by iterating over the list of parent hashes and appending a line for each parent hash to the lines list.
@@ -286,18 +301,19 @@ class Commit(GitObject):
     Finally, the lines are joined with newline characters and encoded to bytes before being returned.
     the return type is bytes.
     """
+
     def _serialize_commit(self):
         lines = [f"tree {self.tree_hash}"]
         for parent in self.parent_hashes:
             lines.append(f"parent {parent}")
-            
+
         lines.append(f"author {self.author} {self.timestamp} +0000")
         lines.append(f"committer {self.committer} {self.timestamp} +0000")
-        lines.append("") # blank line before commit message 
+        lines.append("")  # blank line before commit message
         lines.append(self.message)
-        
+
         return "\n".join(lines).encode()
-    
+
     """  
     The class method from_content is used to create a Commit object from a byte string representation of the commit data.
     The method takes a single argument content, which is a byte string containing the serialized commit data
@@ -308,9 +324,9 @@ class Commit(GitObject):
     The return type is Commit.
     This is basically done in the complete opposite way of _serialize_commit method.
     """
-        
+
     @classmethod
-    def from_content(cls, content:bytes) -> Commit:
+    def from_content(cls, content: bytes) -> Commit:
         lines = content.decode().split("\n")
         tree_hash = None
         parent_hashes = []
@@ -318,7 +334,7 @@ class Commit(GitObject):
         committer = None
         message_start = 0
         # in_message = False
-        
+
         # for line in lines:
         #     if in_message:
         #         message_lines.append(line)
@@ -332,11 +348,11 @@ class Commit(GitObject):
         #         committer = line[10:]
         #     elif line == "":
         #         in_message = True
-                
+
         # message = "\n".join(message_lines)
-        
+
         # return cls(tree_hash, parent_hashes, author,committer, message)
-        
+
         """ 
         The for loop iterates over each line in the commit content.
         It checks the beginning of each line to determine its type (tree, parent, author, committer, or message).
@@ -354,30 +370,31 @@ class Commit(GitObject):
         
         Finally, it joins the remaining lines after the blank line to form the commit message.
         """
-        
+
         for i, line in enumerate(lines):
             if line.startswith("tree "):
                 tree_hash = line[5:]
             elif line.startswith("parent "):
                 parent_hashes.append(line[7:])
             elif line.startswith("author "):
-                author_parts = line[7:].rsplit(" ",2)
+                author_parts = line[7:].rsplit(" ", 2)
                 author = author_parts[0]
                 timestamp = int(author_parts[1])
             elif line.startswith("committer "):
-                committer_parts = line[10:].rsplit(" ",2)
-                committer = committer_parts[0]  
+                committer_parts = line[10:].rsplit(" ", 2)
+                committer = committer_parts[0]
             elif line == "":
                 message_start = i + 1
                 break
-            
+
         # Extract commit message Logic is : the above for loop will break when it encounters a blank line.
         message = "\n".join(lines[message_start:])
 
         # here we are creating the commit object using the extracted data.
-        
-        commit = cls(tree_hash, parent_hashes, author,committer, message,timestamp) 
-        return commit   
+
+        commit = cls(tree_hash, parent_hashes, author, committer, message, timestamp)
+        return commit
+
 
 class Repository:
     # Initialize the repository object
@@ -540,54 +557,52 @@ class Repository:
         else:
             raise ValueError(f"Path '{path}' is neither a file nor a directory.")
 
-    
-    def load_object(self, obj_hash:str) -> GitObject:
+    def load_object(self, obj_hash: str) -> GitObject:
         obj_dir = self.objects_dir / obj_hash[:2]
         obj_file = obj_dir / obj_hash[2:]
-        
+
         if not obj_file.exists():
             raise FileNotFoundError(f"Object '{obj_hash}' not found.")
-        
+
         return GitObject.deserialize(obj_file.read_bytes())
-        
+
         # data = obj_file.read_bytes()
         # obj = GitObject.deserialize(data)
         # return obj
-        
-    
+
     def create_tree_from_index(self):
         index = self.load_index()
         if not index:
             tree = Tree()
             return self.store_object(tree)
-        
+
         dirs = {}
         files = {}
-        
+
         for file_path, blob_hash in index.items():
-            parts = file_path.split("/",1)
-            if len(parts) ==1:
+            parts = file_path.split("/", 1)
+            if len(parts) == 1:
                 files[parts[0]] = blob_hash
             else:
                 # dir_name = parts[0]
                 # rest_path = parts[1]
                 # if dir_name not in dirs:
-                    # dirs[dir_name] = {}
+                # dirs[dir_name] = {}
                 # dirs[dir_name][rest_path] = blob_hash
                 dir_name = parts[0]
                 if dir_name not in dirs:
                     dirs[dir_name] = {}
-                    
+
                 current = dirs[dir_name]
                 for part in parts[1:-1]:
                     if part not in current:
                         current[part] = {}
-                        
+
                     current = current[part]
-                    
+
                 current[parts[-1]] = blob_hash
-        
-        def create_tree_recursive(entries_dict:Dict):
+
+        def create_tree_recursive(entries_dict: Dict):
             # tree = Tree()
             # for name, value in entries_dict.items():
             #     if isinstance(value, dict):
@@ -600,25 +615,24 @@ class Repository:
             # return self.store_object(tree)
             tree = Tree()
             for name, blob_hash in entries_dict.items():
-                if isinstance(blob_hash,str):
-                    #file
-                    tree.add_entry("100644", name,blob_hash)
-                    
-                if isinstance(blob_hash,dict):
+                if isinstance(blob_hash, str):
+                    # file
+                    tree.add_entry("100644", name, blob_hash)
+
+                if isinstance(blob_hash, dict):
                     subtree_hash = create_tree_recursive(blob_hash)
                     tree.add_entry("40000", name, subtree_hash)
-                    
+
             return self.store_object(tree)
-              
+
         root_entries = {**files}
-        
+
         for dir_name, dir_contents in dirs.items():
             root_entries[dir_name] = dir_contents
-        
+
         # Create and store the root tree from the aggregated entries and return its hash
         return create_tree_recursive(root_entries)
-    
-    
+
     def get_current_branch(self) -> str:
         if not self.head_file.exists():
             # raise FileNotFoundError("HEAD file not found. Is this a git repository?")
@@ -626,34 +640,34 @@ class Repository:
         head_content = self.head_file.read_text().strip()
         if head_content.startswith("ref: refs/heads/"):
             return head_content[16:]
-        
+
         return "HEAD"
-    
-    def get_branch_commit(self, current_branch:str):
+
+    def get_branch_commit(self, current_branch: str):
         branch_file = self.heads_dir / current_branch
         if branch_file.exists():
             return branch_file.read_text().strip()
-        
+
         return None
-    
-    def set_branch_commit(self, current_branch:str,commit_hash:str):
+
+    def set_branch_commit(self, current_branch: str, commit_hash: str):
         branch_file = self.heads_dir / current_branch
         branch_file.write_text(commit_hash + "\n")
-    
+
     def commit(self, message: str, author: str = "PyGit User <user@pygit.com>"):
         # Create a tree object from the current index (staging area)
         tree_hash = self.create_tree_from_index()
-        
+
         current_branch = self.get_current_branch()
-        
+
         parent_commit = self.get_branch_commit(current_branch)
         parent_hashes = [parent_commit] if parent_commit else []
-        
+
         index = self.load_index()
         if not index:
             print("No changes to commit. working tree clean...")
             return None
-        
+
         if parent_commit:
             parent_git_commit_obj = self.load_object(parent_commit)
             parent_commit_data = Commit.from_content(parent_git_commit_obj.content)
@@ -662,72 +676,69 @@ class Repository:
                 return None
             # print(f"Parent Commit: {parent_commit}")
 
-
-        
         commit = Commit(
             tree_hash=tree_hash,
             parent_hashes=parent_hashes,
             author=author,
             committer=author,
-            message=message
+            message=message,
         )
-        
-        
+
         commit_hash = self.store_object(commit)
-        
+
         self.set_branch_commit(current_branch, commit_hash)
-        
+
         self.save_index({})
         print(f"Created Commit: {commit_hash} on branch '{current_branch}'.")
         return commit_hash
-        
 
-
-    def get_files_from_tree_recursive(self, tree_hash:str,prefix:str =""):
+    def get_files_from_tree_recursive(self, tree_hash: str, prefix: str = ""):
         files = set()
         try:
             tree_obj = self.load_object(tree_hash)
             tree = Tree.from_content(tree_obj.content)
-            
+
             for mode, name, obj_hash in tree.entries:
                 full_name = f"{prefix}{name}"
                 if mode == "40000":  # directory
-                    sub_files = self.get_files_from_tree_recursive(obj_hash,full_name + "/")
+                    sub_files = self.get_files_from_tree_recursive(
+                        obj_hash, full_name + "/"
+                    )
                     files.update(sub_files)
                 else:
                     files.add(full_name)
         except Exception as e:
             print(f"Warning: Could not read tree {tree_hash}: {e}")
-            
+
         return files
 
-    def checkout(self,branch:str, create_branch:bool = False):
+    def checkout(self, branch: str, create_branch: bool = False):
         # branch_file = self.heads_dir / branch
-        
+
         # if create_branch:
         #     if branch_file.exists():
         #         print(f"Branch '{branch}' already exists.")
         #         return
-            
+
         #     # create new branch pointing to current commit
         #     current_branch = self.get_current_branch()
         #     current_commit = self.get_branch_commit(current_branch)
         #     if not current_commit:
         #         print("No commits in the current branch to base the new branch on.")
         #         return
-            
+
         #     branch_file.write_text(current_commit + "\n")
         #     print(f"Created and switched to new branch '{branch}'.")
         # else:
         #     if not branch_file.exists():
         #         print(f"Branch '{branch}' does not exist.")
         #         return
-            
+
         #     print(f"Switched to branch '{branch}'.")
-        
+
         # # update HEAD to point to the new branch
         # self.head_file.write_text(f"ref: refs/heads/{branch}\n")
-        
+
         previous_branch = self.get_current_branch()
         files_to_clear = set()
         try:
@@ -738,68 +749,67 @@ class Repository:
             #     previous_tree_hash = previous_commit_data.tree_hash
             #     previous_tree_obj = self.load_object(previous_tree_hash)
             #     previous_tree_data = Tree.from_content(previous_tree_obj.content)
-                
+
             #     for mode, name, obj_hash in previous_tree_data.entries:
             #         files_to_clear.add(name)
             if previous_commit_hash:
                 prev_commit_object = self.load_object(previous_commit_hash)
                 prev_commit = Commit.from_content(prev_commit_object.content)
                 if prev_commit.tree_hash:
-                    files_to_clear = self.get_files_from_tree_recursive(prev_commit.tree_hash)
-                    
+                    files_to_clear = self.get_files_from_tree_recursive(
+                        prev_commit.tree_hash
+                    )
+
         except Exception:
             files_to_clear = set()
-            
+
         branch_file = self.heads_dir / branch
         if not branch_file.exists():
             if create_branch:
                 # current_branch = self.get_current_branch()
                 # current_commit = self.get_branch_commit(current_branch)
-                
+
                 if previous_commit_hash:
                     self.set_branch_commit(branch, previous_commit_hash)
                     print(f"Created and switched to new branch '{branch}'.")
                 else:
                     print("No commits yet , cannot create a branch .")
                     return
-                
+
             else:
                 print(f"Branch '{branch}' does not exist.")
-                print(f"Use 'python pygit.py checkout -b {branch}' to create and switch to a new branch.")
-                
-        
+                print(
+                    f"Use 'python pygit.py checkout -b {branch}' to create and switch to a new branch."
+                )
+
         self.head_file.write_text(f"ref: refs/heads/{branch}\n")
-        
+
         # restore working directory files from the new branch's latest commit
         self.restore_working_directory(branch, files_to_clear)
-        
+
         print(f"Switched to branch '{branch}'.")
 
-
-
-    def restore_tree(self, tree_hash:str, path:Path):
+    def restore_tree(self, tree_hash: str, path: Path):
         tree_obj = self.load_object(tree_hash)
         tree = Tree.from_content(tree_obj.content)
-        
+
         for mode, name, obj_hash in tree.entries:
             file_path = path / name
-            
+
             if mode.startswith("100"):  # directory
                 blob_obj = self.load_object(obj_hash)
                 blob = Blob(blob_obj.content)
                 file_path.write_bytes(blob.content)
             elif mode.startswith("400"):
                 file_path.mkdir(exist_ok=True)
-                subtree_files = self.restore_tree(obj_hash,file_path)
+                subtree_files = self.restore_tree(obj_hash, file_path)
                 # files.update(subtree_files)
-                
-        
 
-    def restore_working_directory(self, branch:str, files_to_clear:set[str]):
+    def restore_working_directory(self, branch: str, files_to_clear: set[str]):
         target_commit_hash = self.get_branch_commit(branch)
         if not target_commit_hash:
             return
-        
+
         # remove the files that  are tracked in previous commit but not in the target commit
         for rel_path in sorted(files_to_clear):
             file_path = self.path / rel_path
@@ -808,17 +818,16 @@ class Repository:
                     file_path.unlink()
             except Exception as e:
                 print(f"Warning: Could not remove file '{rel_path}': {e}")
-                
+
         target_commit_obj = self.load_object(target_commit_hash)
         target_commit = Commit.from_content(target_commit_obj.content)
-        
+
         if target_commit.tree_hash:
-            self.restore_tree(target_commit.tree_hash,self.path)
-        
-        self.save_index({}) # Modify it in future
-        
-        
-    def branch(self,branch_name:str,delete:bool=False):
+            self.restore_tree(target_commit.tree_hash, self.path)
+
+        self.save_index({})  # Modify it in future
+
+    def branch(self, branch_name: str, delete: bool = False):
         if delete and branch_name:
             branch_file = self.heads_dir / branch_name
             if branch_file.exists():
@@ -831,7 +840,7 @@ class Repository:
         if branch_name:
             current_commit = self.get_branch_commit(current_branch)
             if current_commit:
-                self.set_branch_commit(branch_name,current_commit)
+                self.set_branch_commit(branch_name, current_commit)
                 print(f"Created branch {branch_name}")
             else:
                 print(f"No Commits yets, cannot create a new branch")
@@ -840,33 +849,195 @@ class Repository:
             for branch_file in self.heads_dir.iterdir():
                 if branch_file.is_file() and not branch_file.name.startswith("."):
                     branches.append(branch_file.name)
-                    
+
             for branch in sorted(branches):
                 current_marker = "* " if branch == current_branch else "  "
                 print(f"{current_marker} {branch}")
-            
-                
-                
-    def log(self,max_count:int = 10):
-        current_branch =self.get_current_branch()
+
+    def log(self, max_count: int = 10):
+        current_branch = self.get_current_branch()
         commit_hash = self.get_branch_commit(current_branch)
-        
+
         if not commit_hash:
             print(f"No Commit Yet!")
             return
-        
+
         count = 0
-        while commit_hash and count<max_count:
+        while commit_hash and count < max_count:
             commit_obj = self.load_object(commit_hash)
             commit = Commit.from_content(commit_obj.content)
-            
+
             print(f"Commit: {commit_hash}")
             print(f"Author: {commit.author}")
             print(f"Date: {time.ctime(commit.timestamp)}")
             print(f"Commit Message: {commit.message}\n")
-            
+
             commit_hash = commit.parent_hashes[0] if commit.parent_hashes else None
-            count +=1
+            count += 1
+
+    def build_index_from_tree(self, tree_hash: str, prefix: str = ""):
+        index = {}
+        try:
+            tree_obj = self.load_object(tree_hash)
+            tree = Tree.from_content(tree_obj.content)
+            # list<tuple<str, str, str>>
+            for mode, name, obj_hash in tree.entries:
+                full_name = f"{prefix}{name}"
+                if mode.startswith("100"):
+                    index[full_name] = obj_hash
+                elif mode.startswith("400"):
+                    subindex = self.build_index_from_tree(obj_hash, f"{full_name}/")
+
+                    index.update(subindex)
+        except Exception as e:
+            print(f"Warning: Could not read tree {tree_hash}: {e}")
+
+        return index
+
+    def get_all_files(self):
+        files = []
+        for item in self.path.rglob("*"):
+            if ".pygit" in item.parts:
+                continue
+
+            if item.is_file():
+                files.append(item)
+
+        return files
+    
+    # def get_all_files(self) -> List[Path]:
+    #     files = []
+
+    #     for item in self.path.rglob("*"):
+    #         if ".pygit" in item.parts:
+    #             continue
+
+    #         if item.is_file():
+    #             files.append(item)
+
+    #     return files
+
+    def status(self):
+        # What branch we are currently on
+        current_branch = self.get_current_branch()
+        print(f"On Branch: {current_branch}")
+        index = self.load_index()
+        current_commit_hash = self.get_branch_commit(current_branch)
+
+        # build the index of the latest commit
+        last_index_file = {}
+        if current_commit_hash:
+            try:
+                commit_obj = self.load_object(current_commit_hash)
+                commit = Commit.from_content(commit_obj.content)
+                if commit.tree_hash:
+                    last_index_file = self.build_index_from_tree(commit.tree_hash)
+            except:
+                last_index_file = {}
+
+        # Figure out all the files within the working directory
+        working_files = {}  # File name -> hash
+        for item in self.get_all_files():
+            rel_path = str(item.relative_to(self.path))
+
+            try:
+                content = item.read_bytes()
+                blob = Blob(content)
+                working_files[rel_path] = blob.hash()
+            except:
+                continue
+
+        stagged_files = []
+        unstagged_files = []
+        untracked_files = []
+        deleted_files = []
+        
+        # What files are stagged for commit
+        for file_path in set(index.keys()) | set(last_index_file.keys()):
+            index_hash = index.get(file_path)
+            last_index_hash = last_index_file.get(file_path)
+
+            if index_hash and not last_index_hash:
+                stagged_files.append(("new file", file_path))
+            elif index_hash and last_index_hash and index_hash != last_index_hash:
+                stagged_files.append(("Modified: ", file_path))
+        if stagged_files:
+            print(f"\nChanges to be Commited: ")
+            for stage_status, file_path in sorted(stagged_files):
+                print(f"   {stage_status}: {file_path}")
+
+        # what file have been modified but not staged
+        # what file have been modified but not staged
+
+
+        # for file_path in working_files:
+        #     if file_path in index:
+        #         if working_files[file_path] != index[file_path]:
+        #             unstagged_files.append(file_path)  # Fixed: () instead of []
+
+
+        # if unstagged_files:
+        #     print(f"\nChanges not stagged for Commit: ")
+        #     for file_path in sorted(unstagged_files):
+        #         print(f"   Modified: {file_path}")
+                
+        # print("hello")
+
+        for file_path in working_files:
+            if file_path in index:
+                if working_files[file_path] != index[file_path]:
+                    unstagged_files.append(file_path)
+
+        if unstagged_files:
+            print(f"\nChanges not stagged for Commit: ")
+            for file_path in sorted(unstagged_files):
+                print(f"   Modified: {file_path}")
+        
+        # for file_path in working_files:
+        #     if file_path in index:
+        #         if working_files[file_path] != index[file_path]:
+        #             unstagged_files.append(file_path)
+
+        # if unstagged_files:
+        #     print("\nChanges not staged for commit:")
+        #     for file_path in sorted(unstagged_files):
+        #         print(f"   modified: {file_path}")
+        
+        
+        # What files are untracked
+        for file_path in working_files:
+            if file_path not in index and file_path not in last_index_file:
+                untracked_files.append(file_path)
+
+        
+        if untracked_files:
+            print("\nUntracked Files: ")
+            for file_path in sorted(untracked_files):
+                print(f"   Modified: {file_path}")
+                
+                
+        # what files have been deleted
+        for file_path in index:
+            if file_path not in working_files:
+                deleted_files.append(file_path)
+        
+        if deleted_files:
+            print("\nDeleted Files: ")
+            for file_path in sorted(deleted_files):
+                print(f"   Deleted: {file_path}")
+                
+        # if not stagged_files and not unstagged_files and not deleted_files and not untracked_files:
+        #     print("\nNothing to Commite, Working Tree is Clean...")
+        #     print("Yoo")
+            
+        if (
+            not stagged_files
+            and not unstagged_files
+            and not deleted_files
+            and not untracked_files
+        ):
+            print("\nnothing to commit, working tree clean")
+        
 
 
 def main():
@@ -902,40 +1073,43 @@ def main():
         "commit", help="Commit staged changes to the repository"
     )
 
-    commit_parser.add_argument(
-        "-m",
-        "--message",
-        required=True, 
-        help="Commit message"
-    )
-    
+    commit_parser.add_argument("-m", "--message", required=True, help="Commit message")
+
     commit_parser.add_argument(
         "-a",
         "--author",
-        # required=True, 
-        help="Author name & email."
+        # required=True,
+        help="Author name & email.",
     )
-    
+
     # Checkout Command --This command is used to checkout a specific branch or commit in the repository.
-    checkout_parser = subparsers.add_parser("checkout", help = "Move / create a new branch and check it out.")
-    checkout_parser.add_argument("branch",help="Branch to switch to.")
-    checkout_parser.add_argument("-b", "--create-branch", action="store_true", help="Create and switch to a  new branch and check it out.")
-    
-    
-    
-    # branch command 
-    branch_parser = subparsers.add_parser("branch",help="Create a new branch")
-    branch_parser.add_argument("name",nargs="?")
-    branch_parser.add_argument("-d","--delete",action="store_true",help="Delete a branch")
-    
-    
+    checkout_parser = subparsers.add_parser(
+        "checkout", help="Move / create a new branch and check it out."
+    )
+    checkout_parser.add_argument("branch", help="Branch to switch to.")
+    checkout_parser.add_argument(
+        "-b",
+        "--create-branch",
+        action="store_true",
+        help="Create and switch to a  new branch and check it out.",
+    )
+
+    # branch command
+    branch_parser = subparsers.add_parser("branch", help="Create a new branch")
+    branch_parser.add_argument("name", nargs="?")
+    branch_parser.add_argument(
+        "-d", "--delete", action="store_true", help="Delete a branch"
+    )
+
     # log command
-    log_parser = subparsers.add_parser("log",help="Show Commit History")
-    log_parser.add_argument("-n","--max-count",type=int,default=10,help="Limit Commits Shown")
-    
-    
-    
-    
+    log_parser = subparsers.add_parser("log", help="Show Commit History")
+    log_parser.add_argument(
+        "-n", "--max-count", type=int, default=10, help="Limit Commits Shown"
+    )
+
+    # status command
+    status_parser = subparsers.add_parser("status", help="Show Repository Status")
+
     # parse the arguments
     args = parser.parse_args()
 
@@ -969,7 +1143,7 @@ def main():
             Because there is a possibility that a folder has a folder which has a folder and so on. So
             we have to recursively add all the files and sub-directories in it.
             """
-        
+
         elif args.command == "commit":
             if not repo.git_dir.exists():
                 print("Not a git repository. Please run 'init' command first.")
@@ -977,30 +1151,37 @@ def main():
 
             # author = args.author if args.author else "Anonymous <>"
             author = args.author or "PyGit user <user@pygit.com>"
-            repo.commit(args.message,author)
+            repo.commit(args.message, author)
             # print(f"Committing staged changes with message: {args.message}")
-        
+
         elif args.command == "checkout":
             if not repo.git_dir.exists():
                 print("Not a git repository. Please run 'init' command first.")
                 return
-            
+
             repo.checkout(args.branch, args.create_branch)
-        
+
         elif args.command == "branch":
             if not repo.git_dir.exists():
                 print(f"Not a directory. please run 'init' command first...")
                 return
-            
-            repo.branch(args.name,args.delete)
-            
+
+            repo.branch(args.name, args.delete)
+
         elif args.command == "log":
             if not repo.git_dir.exists:
                 print(f"Not a directory. please run 'init' command first...")
                 return
-            
+
             repo.log(args.max_count)
-        
+
+        elif args.command == "status":
+            if not repo.git_dir.exists:
+                print(f"Not a directory. please run 'init' command first...")
+                return
+
+            repo.status()
+
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(1)
