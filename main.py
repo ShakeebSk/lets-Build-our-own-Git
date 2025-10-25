@@ -846,6 +846,27 @@ class Repository:
                 print(f"{current_marker} {branch}")
             
                 
+                
+    def log(self,max_count:int = 10):
+        current_branch =self.get_current_branch()
+        commit_hash = self.get_branch_commit(current_branch)
+        
+        if not commit_hash:
+            print(f"No Commit Yet!")
+            return
+        
+        count = 0
+        while commit_hash and count<max_count:
+            commit_obj = self.load_object(commit_hash)
+            commit = Commit.from_content(commit_obj.content)
+            
+            print(f"Commit: {commit_hash}")
+            print(f"Author: {commit.author}")
+            print(f"Date: {time.ctime(commit.timestamp)}")
+            print(f"Commit Message: {commit.message}\n")
+            
+            commit_hash = commit.parent_hashes[0] if commit.parent_hashes else None
+            count +=1
 
 
 def main():
@@ -907,6 +928,14 @@ def main():
     branch_parser.add_argument("name",nargs="?")
     branch_parser.add_argument("-d","--delete",action="store_true",help="Delete a branch")
     
+    
+    # log command
+    log_parser = subparsers.add_parser("log",help="Show Commit History")
+    log_parser.add_argument("-n","--max-count",type=int,default=10,help="Limit Commits Shown")
+    
+    
+    
+    
     # parse the arguments
     args = parser.parse_args()
 
@@ -964,6 +993,13 @@ def main():
                 return
             
             repo.branch(args.name,args.delete)
+            
+        elif args.command == "log":
+            if not repo.git_dir.exists:
+                print(f"Not a directory. please run 'init' command first...")
+                return
+            
+            repo.log(args.max_count)
         
     except Exception as e:
         print(f"An error occurred: {e}")
