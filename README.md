@@ -1,13 +1,13 @@
-🧬 PyGit – A Simple Git Clone in Python
+#🧬 PyGit – A Simple Git Clone in Python
 
-📖 What is PyGit?
+##📖 What is PyGit?
 
 PyGit is a lightweight Python-based implementation of Git that helps you understand the core internals of version control systems.
 It mimics how Git stores files, tracks history, and manages branches — all using Python’s standard library.
 
 🔍 Ideal for developers and students who want to see how Git actually works behind the scenes.
 
-⚙️ Core Components
+###⚙️ Core Components
 🧩 1. GitObject Class
 
 Base class for all Git objects (Blob, Tree, Commit)
@@ -16,13 +16,13 @@ Handles serialization/deserialization with zlib compression
 
 Generates SHA-1 hashes for unique object identification
 
-📄 2. Blob Objects
+###📄 2. Blob Objects
 
 Represent individual files
 
 Store and compress raw file data
 
-🌲 3. Tree Objects
+###🌲 3. Tree Objects
 
 Represent directory structures
 
@@ -30,7 +30,7 @@ Store references to blobs and other trees
 
 Maintain file names and permissions
 
-🕓 4. Commit Objects
+###🕓 4. Commit Objects
 
 Contain metadata (author, timestamp, message)
 
@@ -38,7 +38,7 @@ Point to a tree object and a parent commit
 
 Form a linked commit history chain
 
-🏗️ 5. Repository Class
+###🏗️ 5. Repository Class
 
 Manages the .git/ directory
 
@@ -46,7 +46,7 @@ Handles object storage/retrieval
 
 Implements core Git operations: init, add, commit, checkout, etc.
 
-🚀 Features
+##🚀 Features
 
 ✅ Repository Initialization (init)
 ✅ File Staging (add)
@@ -56,10 +56,10 @@ Implements core Git operations: init, add, commit, checkout, etc.
 ✅ Status Checking (status)
 ✅ Object Storage with SHA-1 hashing and zlib compression
 
-📦 Installation & Setup
+##📦 Installation & Setup
 Prerequisites
 
-🐍 Python 3.7+
+###🐍 Python 3.7+
 
 No external libraries required!
 
