@@ -1,52 +1,52 @@
-#🧬 PyGit – A Simple Git Clone in Python
+# 🧬 PyGit – A Simple Git Clone in Python
 
-##📖 What is PyGit?
+## 📖 What is PyGit?
 
 PyGit is a lightweight Python-based implementation of Git that helps you understand the core internals of version control systems.
 It mimics how Git stores files, tracks history, and manages branches — all using Python’s standard library.
 
 🔍 Ideal for developers and students who want to see how Git actually works behind the scenes.
 
-###⚙️ Core Components
-🧩 1. GitObject Class
+### ⚙️ Core Components
+- 🧩 1. GitObject Class
 
-Base class for all Git objects (Blob, Tree, Commit)
+- Base class for all Git objects (Blob, Tree, Commit)
 
-Handles serialization/deserialization with zlib compression
+- Handles serialization/deserialization with zlib compression
 
-Generates SHA-1 hashes for unique object identification
+- Generates SHA-1 hashes for unique object identification
 
-###📄 2. Blob Objects
+### 📄 2. Blob Objects
 
-Represent individual files
+- Represent individual files
 
-Store and compress raw file data
+- Store and compress raw file data
 
-###🌲 3. Tree Objects
+### 🌲 3. Tree Objects
 
-Represent directory structures
+- Represent directory structures
 
-Store references to blobs and other trees
+- Store references to blobs and other trees
 
-Maintain file names and permissions
+- Maintain file names and permissions
 
-###🕓 4. Commit Objects
+### 🕓 4. Commit Objects
 
-Contain metadata (author, timestamp, message)
+- Contain metadata (author, timestamp, message)
 
-Point to a tree object and a parent commit
+- Point to a tree object and a parent commit
 
-Form a linked commit history chain
+- Form a linked commit history chain
 
-###🏗️ 5. Repository Class
+### 🏗️ 5. Repository Class
 
-Manages the .git/ directory
+- Manages the .git/ directory
 
-Handles object storage/retrieval
+- Handles object storage/retrieval
 
-Implements core Git operations: init, add, commit, checkout, etc.
+- Implements core Git operations: init, add, commit, checkout, etc.
 
-##🚀 Features
+## 🚀 Features
 
 ✅ Repository Initialization (init)
 ✅ File Staging (add)
@@ -59,7 +59,7 @@ Implements core Git operations: init, add, commit, checkout, etc.
 ##📦 Installation & Setup
 Prerequisites
 
-###🐍 Python 3.7+
+### 🐍 Python 3.7+
 
 No external libraries required!
 
@@ -78,27 +78,27 @@ python3 main.py add README.md
 python3 main.py commit -m "Initial commit"
 ```
 
-💻 Usage Examples
+# 💻 Usage Examples
 🔧 Initialize Repository
 ```bash
 python3 main.py init
 # Output: Initialized empty Git repository in ./.git
 ```
 
-➕ Add Files
+# ➕ Add Files
 ```bash
 python3 main.py add main.py
 python3 main.py add src/
 python3 main.py add file1.py file2.py src/
 ```
 
-🧾 Commit Changes
+# 🧾 Commit Changes
 ```bash
 python3 main.py commit -m "Add new feature"
 python3 main.py commit -m "Fix bug" --author "Shakeeb Shaikh <shakeeb@shaikh.com>"
 ```
 
-🌿 Branch Operations
+# 🌿 Branch Operations
 ```bash
 python3 main.py branch
 python3 main.py checkout -b feature-branch
@@ -106,13 +106,13 @@ python3 main.py checkout main
 python3 main.py branch feature-branch -d
 ```
 
-🧭 View Status & Log
+# 🧭 View Status & Log
 ```bash
 python3 main.py status
 python3 main.py log -n 5
 ```
 
-🗂️ Project Structure
+# 🗂️ Project Structure
 ```text
 git_clone/
 ├── main.py          # Main PyGit implementation
@@ -124,8 +124,8 @@ git_clone/
     └── index        # Staging area
 ```
 
-🔍 How It Works (Visualized)
-🗃️ 1. Object Storage (Blobs, Trees, Commits)
+# 🔍 How It Works (Visualized)
+## 🗃️ 1. Object Storage (Blobs, Trees, Commits)
 ```text
                 ┌────────────────────────┐
                 │       Commit Object     │
@@ -152,8 +152,8 @@ git_clone/
         │ print("A")   │   │ print("B")   │   │ def main():  │
         └──────────────┘   └──────────────┘   └──────────────┘
 ```
-🧺 2. Staging Process
-Working Directory  →  Staging Area (index)  →  Object Database (.git/objects)
+## 🧺 2. Staging Process
+### Working Directory  →  Staging Area (index)  →  Object Database (.git/objects)
 ```text
 file1.py, file2.py
      │
@@ -161,7 +161,7 @@ file1.py, file2.py
      ├─► Index stores SHA-1 references
      └─► Tree object created at commit time
 ```
-🧱 3. Commit History Chain
+## 🧱 3. Commit History Chain
 ```text
 HEAD → master → Commit (hash1)
                    │
@@ -171,7 +171,7 @@ HEAD → master → Commit (hash1)
                    ▼
                 (initial)
 ```
-🌱 4. Branches & HEAD
+## 🌱 4. Branches & HEAD
 ```text
 refs/
  ├── heads/
@@ -180,9 +180,9 @@ refs/
  └── HEAD → refs/heads/main
 ```
 When switching branches, HEAD changes its reference and updates the working tree.
-🧠 Why PyGit?
+# 🧠 Why PyGit?
 
-“To truly master Git, build your own.”
+## “To truly master Git, build your own.”
 
 PyGit helps you:
 
