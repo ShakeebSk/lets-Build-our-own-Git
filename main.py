@@ -6,7 +6,7 @@ import json
 import hashlib
 from time import time
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import zlib
 
 # from git import Tree
@@ -48,7 +48,7 @@ SHA-256 is considered to be more secure than SHA-1 and is recommended for use in
 What is Zlib Compression? --Zlib is a software library used for data compression. It provides in-memory compression and decompression functions, as well as support for reading and writing compressed files.
 Zlib uses the DEFLATE compression algorithm, which is a combination of LZ77 and Huffman coding.
 Zlib is widely used in various applications and protocols, including PNG image format, HTTP compression, and ZIP file format.
-Serialization --Git objects are serialized to a byte string before they are stored in the .git/objects directory.
+Serialization --Git objects are serialized to a byte string before they are stored in the .pygit/objects directory.
 Serialization is the process of converting an object into a byte string that can be stored in a file or transmitted over a network.--Compress the Object and Store it,.
 Deserialization --Deserialization is the process of converting a byte string back into an object. --Read the Object from the file and Decompress it.
 The GitObject class will have the following methods:
@@ -89,7 +89,7 @@ What is a Commit Object? --A commit object in Git is a snapshot of the repositor
 It contains metadata about the commit, such as the author, committer, commit message, and a reference to the tree object that represents the state of the repository at the time of the commit.
 A commit object also contains references to its parent commits, which allows Git to track the history of changes in the repository.
 The commit object is identified by a unique SHA-1 hash, which is generated based on the content of the commit object.
-The commit object is stored in the .git/objects directory of the repository, along with other Git objects such as blobs and trees.  
+The commit object is stored in the .pygit/objects directory of the repository, along with other Git objects such as blobs and trees.  
 Why do we need Commit Object? --Commit objects are essential for version control in Git. They allow developers to track changes to the codebase over time, collaborate with others, and revert to previous versions of the code if necessary.   
 Wht do we need hirarchy in Commit Object? --The hierarchy in commit objects allows Git to efficiently manage and navigate the history of changes in a repository. By organizing commits in a tree-like structure, Git can quickly identify the relationships between different commits, making it easier to track changes, merge branches, and resolve conflicts.
 """
@@ -391,17 +391,17 @@ class Repository:
         """
         self.git_dir = self.path / ".pygit"
 
-        # .git/ojects --The objects directory in Git is used to store all the content of the repository, including commits, trees, and blobs.
+        # .pygit/ojects --The objects directory in Git is used to store all the content of the repository, including commits, trees, and blobs.
         self.objects_dir = self.git_dir / "objects"
 
-        # .git/refs --The refs directory in Git is used to store references to commits, branches, and tags in the repository.
+        # .pygit/refs --The refs directory in Git is used to store references to commits, branches, and tags in the repository.
         self.ref_dir = self.git_dir / "refs"
         self.heads_dir = self.ref_dir / "heads"
 
         # .Head File --The HEAD file in Git is a reference to the current branch or commit that you have checked out in your working directory.
         self.head_file = self.git_dir / "HEAD"
 
-        # .git/index  --The index file in Git is a binary file that stores information about the files in your working directory and their corresponding entries in the Git repository.
+        # .pygit/index  --The index file in Git is a binary file that stores information about the files in your working directory and their corresponding entries in the Git repository.
         self.index_file = self.git_dir / "index"
 
     def init(self) -> bool:
@@ -478,7 +478,7 @@ class Repository:
         6. The index file is used by Git to keep track of the files that are staged for the next commit.
         7. The index file is updated whenever you run the git add command to stage changes for the next commit.
         8. The index file is also used by Git to determine which files have been modified, added, or deleted since the last commit.
-        9. The index file is stored in the .git directory of the repository.   
+        9. The index file is stored in the .pygit directory of the repository.   
         """
         index = self.load_index()
         index[path] = blob_hash
@@ -614,6 +614,9 @@ class Repository:
         
         for dir_name, dir_contents in dirs.items():
             root_entries[dir_name] = dir_contents
+        
+        # Create and store the root tree from the aggregated entries and return its hash
+        return create_tree_recursive(root_entries)
     
     
     def get_current_branch(self) -> str:
@@ -637,7 +640,7 @@ class Repository:
         branch_file = self.heads_dir / current_branch
         branch_file.write_text(commit_hash + "\n")
     
-    def commit(self, message: str, author: str = "PyGit User <user@pygit.com>") -> None:
+    def commit(self, message: str, author: str = "PyGit User <user@pygit.com>"):
         # Create a tree object from the current index (staging area)
         tree_hash = self.create_tree_from_index()
         
@@ -678,6 +681,172 @@ class Repository:
         print(f"Created Commit: {commit_hash} on branch '{current_branch}'.")
         return commit_hash
         
+
+
+    def get_files_from_tree_recursive(self, tree_hash:str,prefix:str =""):
+        files = set()
+        try:
+            tree_obj = self.load_object(tree_hash)
+            tree = Tree.from_content(tree_obj.content)
+            
+            for mode, name, obj_hash in tree.entries:
+                full_name = f"{prefix}{name}"
+                if mode == "40000":  # directory
+                    sub_files = self.get_files_from_tree_recursive(obj_hash,full_name + "/")
+                    files.update(sub_files)
+                else:
+                    files.add(full_name)
+        except Exception as e:
+            print(f"Warning: Could not read tree {tree_hash}: {e}")
+            
+        return files
+
+    def checkout(self,branch:str, create_branch:bool = False):
+        # branch_file = self.heads_dir / branch
+        
+        # if create_branch:
+        #     if branch_file.exists():
+        #         print(f"Branch '{branch}' already exists.")
+        #         return
+            
+        #     # create new branch pointing to current commit
+        #     current_branch = self.get_current_branch()
+        #     current_commit = self.get_branch_commit(current_branch)
+        #     if not current_commit:
+        #         print("No commits in the current branch to base the new branch on.")
+        #         return
+            
+        #     branch_file.write_text(current_commit + "\n")
+        #     print(f"Created and switched to new branch '{branch}'.")
+        # else:
+        #     if not branch_file.exists():
+        #         print(f"Branch '{branch}' does not exist.")
+        #         return
+            
+        #     print(f"Switched to branch '{branch}'.")
+        
+        # # update HEAD to point to the new branch
+        # self.head_file.write_text(f"ref: refs/heads/{branch}\n")
+        
+        previous_branch = self.get_current_branch()
+        files_to_clear = set()
+        try:
+            previous_commit_hash = self.get_branch_commit(previous_branch)
+            # if previous_commit_hash:
+            #     previous_commit_obj = self.load_object(previous_commit_hash)
+            #     previous_commit_data = Commit.from_content(previous_commit_obj.content)
+            #     previous_tree_hash = previous_commit_data.tree_hash
+            #     previous_tree_obj = self.load_object(previous_tree_hash)
+            #     previous_tree_data = Tree.from_content(previous_tree_obj.content)
+                
+            #     for mode, name, obj_hash in previous_tree_data.entries:
+            #         files_to_clear.add(name)
+            if previous_commit_hash:
+                prev_commit_object = self.load_object(previous_commit_hash)
+                prev_commit = Commit.from_content(prev_commit_object.content)
+                if prev_commit.tree_hash:
+                    files_to_clear = self.get_files_from_tree_recursive(prev_commit.tree_hash)
+                    
+        except Exception:
+            files_to_clear = set()
+            
+        branch_file = self.heads_dir / branch
+        if not branch_file.exists():
+            if create_branch:
+                # current_branch = self.get_current_branch()
+                # current_commit = self.get_branch_commit(current_branch)
+                
+                if previous_commit_hash:
+                    self.set_branch_commit(branch, previous_commit_hash)
+                    print(f"Created and switched to new branch '{branch}'.")
+                else:
+                    print("No commits yet , cannot create a branch .")
+                    return
+                
+            else:
+                print(f"Branch '{branch}' does not exist.")
+                print(f"Use 'python pygit.py checkout -b {branch}' to create and switch to a new branch.")
+                
+        
+        self.head_file.write_text(f"ref: refs/heads/{branch}\n")
+        
+        # restore working directory files from the new branch's latest commit
+        self.restore_working_directory(branch, files_to_clear)
+        
+        print(f"Switched to branch '{branch}'.")
+
+
+
+    def restore_tree(self, tree_hash:str, path:Path):
+        tree_obj = self.load_object(tree_hash)
+        tree = Tree.from_content(tree_obj.content)
+        
+        for mode, name, obj_hash in tree.entries:
+            file_path = path / name
+            
+            if mode.startswith("100"):  # directory
+                blob_obj = self.load_object(obj_hash)
+                blob = Blob(blob_obj.content)
+                file_path.write_bytes(blob.content)
+            elif mode.startswith("400"):
+                file_path.mkdir(exist_ok=True)
+                subtree_files = self.restore_tree(obj_hash,file_path)
+                # files.update(subtree_files)
+                
+        
+
+    def restore_working_directory(self, branch:str, files_to_clear:set[str]):
+        target_commit_hash = self.get_branch_commit(branch)
+        if not target_commit_hash:
+            return
+        
+        # remove the files that  are tracked in previous commit but not in the target commit
+        for rel_path in sorted(files_to_clear):
+            file_path = self.path / rel_path
+            try:
+                if file_path.is_file():
+                    file_path.unlink()
+            except Exception as e:
+                print(f"Warning: Could not remove file '{rel_path}': {e}")
+                
+        target_commit_obj = self.load_object(target_commit_hash)
+        target_commit = Commit.from_content(target_commit_obj.content)
+        
+        if target_commit.tree_hash:
+            self.restore_tree(target_commit.tree_hash,self.path)
+        
+        self.save_index({}) # Modify it in future
+        
+        
+    def branch(self,branch_name:str,delete:bool=False):
+        if delete and branch_name:
+            branch_file = self.heads_dir / branch_name
+            if branch_file.exists():
+                branch_file.unlink()
+                print(f"Deleted Branch: {branch_name}")
+            else:
+                print(f"Branch {branch_name} not found")
+            return
+        current_branch = self.get_current_branch()
+        if branch_name:
+            current_commit = self.get_branch_commit(current_branch)
+            if current_commit:
+                self.set_branch_commit(branch_name,current_commit)
+                print(f"Created branch {branch_name}")
+            else:
+                print(f"No Commits yets, cannot create a new branch")
+        else:
+            branches = []
+            for branch_file in self.heads_dir.iterdir():
+                if branch_file.is_file() and not branch_file.name.startswith("."):
+                    branches.append(branch_file.name)
+                    
+            for branch in sorted(branches):
+                current_marker = "* " if branch == current_branch else "  "
+                print(f"{current_marker} {branch}")
+            
+                
+
 
 def main():
     # What is an arg parser? --argparse is a module in Python's standard library that provides a way to handle command-line arguments passed to a script.
@@ -726,6 +895,18 @@ def main():
         help="Author name & email."
     )
     
+    # Checkout Command --This command is used to checkout a specific branch or commit in the repository.
+    checkout_parser = subparsers.add_parser("checkout", help = "Move / create a new branch and check it out.")
+    checkout_parser.add_argument("branch",help="Branch to switch to.")
+    checkout_parser.add_argument("-b", "--create-branch", action="store_true", help="Create and switch to a  new branch and check it out.")
+    
+    
+    
+    # branch command 
+    branch_parser = subparsers.add_parser("branch",help="Create a new branch")
+    branch_parser.add_argument("name",nargs="?")
+    branch_parser.add_argument("-d","--delete",action="store_true",help="Delete a branch")
+    
     # parse the arguments
     args = parser.parse_args()
 
@@ -769,6 +950,20 @@ def main():
             author = args.author or "PyGit user <user@pygit.com>"
             repo.commit(args.message,author)
             # print(f"Committing staged changes with message: {args.message}")
+        
+        elif args.command == "checkout":
+            if not repo.git_dir.exists():
+                print("Not a git repository. Please run 'init' command first.")
+                return
+            
+            repo.checkout(args.branch, args.create_branch)
+        
+        elif args.command == "branch":
+            if not repo.git_dir.exists():
+                print(f"Not a directory. please run 'init' command first...")
+                return
+            
+            repo.branch(args.name,args.delete)
         
     except Exception as e:
         print(f"An error occurred: {e}")
