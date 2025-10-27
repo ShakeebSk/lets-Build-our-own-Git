@@ -31,3 +31,7 @@ class GitObject:
         content = decompressed[null_idx + 1 :]
         obj_type, _ = header.split(" ")
         return cls(obj_type, content)
+
+class Blob(GitObject):
+    def __init__(self, content: bytes):
+        super().__init__("blob", content)
