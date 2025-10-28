@@ -137,3 +137,12 @@ class Tag(GitObject):
         message: str,
         timestamp: int = None,
     ):
+        self.object_hash = object_hash
+        self.object_type = object_type
+        self.tag_name = tag_name
+        self.tagger = tagger
+        self.message = message
+        self.timestamp = timestamp or int(time.time())
+        content = self._serialize_tag()
+        super().__init__("tag", content)
+
