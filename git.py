@@ -146,3 +146,13 @@ class Tag(GitObject):
         content = self._serialize_tag()
         super().__init__("tag", content)
 
+    def _serialize_tag(self):
+        lines = [
+            f"object {self.object_hash}",
+            f"type {self.object_type}",
+            f"tag {self.tag_name}",
+            f"tagger {self.tagger} {self.timestamp} +0000",
+            "",
+            self.message
+        ]
+        return "\n".join(lines).encode()
