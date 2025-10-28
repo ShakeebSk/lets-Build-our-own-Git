@@ -126,3 +126,14 @@ class Commit(GitObject):
         message = "\n".join(lines[message_start:])
         commit = cls(tree_hash, parent_hashes, author, committer, message, timestamp)
         return commit
+
+class Tag(GitObject):
+    def __init__(
+        self,
+        object_hash: str,
+        object_type: str,
+        tag_name: str,
+        tagger: str,
+        message: str,
+        timestamp: int = None,
+    ):
