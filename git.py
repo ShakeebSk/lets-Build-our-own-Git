@@ -156,3 +156,31 @@ class Tag(GitObject):
             self.message
         ]
         return "\n".join(lines).encode()
+
+    @classmethod
+    def from_content(cls, content: bytes) -> Tag:
+        lines = content.decode().split("\n")
+        object_hash = None
+        object_type = None
+        tag_name = None
+        tagger = None
+        timestamp = int(time.time())
+        message_start = 0
+
+        for i, line in enumerate(lines):
+            if line.startswith("object "):
+                object_hash = line[7:]
+            elif line.startswith("type "):
+                object_type = line[5:]
+            elif line.startswith("tag "):
+                tag_name = line[4:]
+            elif line.startswith("tagger "):
+                tagger_parts = line[7:].rsplit(" ", 2)
+                tagger = tagger_parts[0]
+                timestamp = int(tagger_parts[1])
+            elif line == "":
+                message_start = i + 1
+                break
+
+        message = "\n".join(lines[message_start:])
+        return cls(object_hash, object_type, tag_name, tagger, message, timestamp)
