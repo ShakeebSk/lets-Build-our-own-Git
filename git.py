@@ -230,3 +230,19 @@ class Repository:
         except:
             return {}
 
+
+    def save_index(self, index: Dict[str, str]):
+        self.index_file.write_text(json.dumps(index, indent=2))
+
+    def add_file(self, path: str):
+        full_path = self.path / path
+        if not full_path.exists():
+            raise FileNotFoundError(f"Path {path} not found")
+        content = full_path.read_bytes()
+        blob = Blob(content)
+        blob_hash = self.store_object(blob)
+        index = self.load_index()
+        index[path] = blob_hash
+        self.save_index(index)
+        print(f"Added {path}")
+
