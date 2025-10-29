@@ -332,3 +332,17 @@ class Repository:
 
         return create_tree_recursive(root_entries)
 
+
+    def get_current_branch(self) -> str:
+        if not self.head_file.exists():
+            return "master"
+        head_content = self.head_file.read_text().strip()
+        if head_content.startswith("ref: refs/heads/"):
+            return head_content[16:]
+        return "HEAD"
+
+
+
+
+
+
