@@ -316,4 +316,19 @@ class Repository:
                     current = current[part]
                 current[parts[-1]] = blob_hash
 
+        def create_tree_recursive(entries_dict: Dict):
+            tree = Tree()
+            for name, blob_hash in entries_dict.items():
+                if isinstance(blob_hash, str):
+                    tree.add_entry("100644", name, blob_hash)
+                if isinstance(blob_hash, dict):
+                    subtree_hash = create_tree_recursive(blob_hash)
+                    tree.add_entry("40000", name, subtree_hash)
+            return self.store_object(tree)
+
+        root_entries = {**files}
+        for dir_name, dir_contents in dirs.items():
+            root_entries[dir_name] = dir_contents
+
+        return create_tree_recursive(root_entries)
 
