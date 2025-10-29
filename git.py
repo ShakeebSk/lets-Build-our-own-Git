@@ -370,6 +370,65 @@ class Repository:
 
 
 
+    def commit(self, message: str, author: str = "PyGit User <user@pygit.com>"):
+        tree_hash = self.create_tree_from_index()
+        
+        # Check for merge in progress
+        parent_hashes = []
+        if self.merge_head_file.exists():
+            # Merge commit
+            current_head = self.get_head_commit()
+            merge_head = self.merge_head_file.read_text().strip()
+            if current_head:
+                parent_hashes = [current_head, merge_head]
+            else:
+                parent_hashes = [merge_head]
+            
+            # Use merge message if available
+            if self.merge_msg_file.exists() and not message:
+                message = self.merge_msg_file.read_text().strip()
+        else:
+            # Normal commit
+            current_head = self.get_head_commit()
+            parent_hashes = [current_head] if current_head else []
 
+        index = self.load_index()
+        if not index:
+            print("nothing to commit, working tree clean")
+            return None
+
+        if parent_hashes and len(parent_hashes) == 1:
+            parent_git_commit_obj = self.load_object(parent_hashes[0])
+            parent_commit_data = Commit.from_content(parent_git_commit_obj.content)
+            if tree_hash == parent_commit_data.tree_hash:
+                print("nothing to commit, working tree clean")
+                return None
+
+        commit = Commit(
+            tree_hash=tree_hash,
+            parent_hashes=parent_hashes,
+            author=author,
+            committer=author,
+            message=message,
+        )
+        commit_hash = self.store_object(commit)
+
+        # Update HEAD
+        if self.is_detached_head():
+            self.head_file.write_text(commit_hash + "\n")
+            print(f"Created commit {commit_hash} (detached HEAD)")
+        else:
+            current_branch = self.get_current_branch()
+            self.set_branch_commit(current_branch, commit_hash)
+            print(f"Created commit {commit_hash} on branch {current_branch}")
+
+        # Clean up merge state
+        if self.merge_head_file.exists():
+            self.merge_head_file.unlink()
+        if self.merge_msg_file.exists():
+            self.merge_msg_file.unlink()
+
+        self.save_index({})
+        return commit_hash
 
 
