@@ -200,4 +200,14 @@ class Repository:
         self.merge_msg_file = self.git_dir / "MERGE_MSG"
         self.stash_file = self.git_dir / "stash"
 
-    
+    def init(self) -> bool:
+        if self.git_dir.exists():
+            return False
+        self.git_dir.mkdir()
+        self.objects_dir.mkdir()
+        self.ref_dir.mkdir()
+        self.heads_dir.mkdir()
+        self.tags_dir.mkdir(exist_ok=True)
+        self.head_file.write_text("ref: refs/heads/master\n")
+        self.save_index({})
+        print(f"Initialized empty Git repository in {self.git_dir}")
