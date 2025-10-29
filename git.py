@@ -290,3 +290,30 @@ class Repository:
         if not obj_file.exists():
             raise FileNotFoundError(f"Object {obj_hash} not found")
         return GitObject.deserialize(obj_file.read_bytes())
+
+
+    def create_tree_from_index(self):
+        index = self.load_index()
+        if not index:
+            tree = Tree()
+            return self.store_object(tree)
+
+        dirs = {}
+        files = {}
+
+        for file_path, blob_hash in index.items():
+            parts = file_path.split("/")
+            if len(parts) == 1:
+                files[parts[0]] = blob_hash
+            else:
+                dir_name = parts[0]
+                if dir_name not in dirs:
+                    dirs[dir_name] = {}
+                current = dirs[dir_name]
+                for part in parts[1:-1]:
+                    if part not in current:
+                        current[part] = {}
+                    current = current[part]
+                current[parts[-1]] = blob_hash
+
+
