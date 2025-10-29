@@ -284,4 +284,9 @@ class Repository:
 
 
 
-
+    def load_object(self, obj_hash: str) -> GitObject:
+        obj_dir = self.objects_dir / obj_hash[:2]
+        obj_file = obj_dir / obj_hash[2:]
+        if not obj_file.exists():
+            raise FileNotFoundError(f"Object {obj_hash} not found")
+        return GitObject.deserialize(obj_file.read_bytes())
