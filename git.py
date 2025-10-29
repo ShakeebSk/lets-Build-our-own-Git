@@ -221,3 +221,12 @@ class Repository:
             obj_dir.mkdir(exist_ok=True)
             obj_file.write_bytes(obj.serialize())
         return obj_hash
+
+    def load_index(self) -> Dict[str, str]:
+        if not self.index_file.exists():
+            return {}
+        try:
+            return json.loads(self.index_file.read_text())
+        except:
+            return {}
+
