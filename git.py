@@ -184,3 +184,20 @@ class Tag(GitObject):
 
         message = "\n".join(lines[message_start:])
         return cls(object_hash, object_type, tag_name, tagger, message, timestamp)
+
+
+class Repository:
+    def __init__(self, path="."):
+        self.path = Path(path).resolve()
+        self.git_dir = self.path / ".git"
+        self.objects_dir = self.git_dir / "objects"
+        self.ref_dir = self.git_dir / "refs"
+        self.heads_dir = self.ref_dir / "heads"
+        self.tags_dir = self.ref_dir / "tags"
+        self.head_file = self.git_dir / "HEAD"
+        self.index_file = self.git_dir / "index"
+        self.merge_head_file = self.git_dir / "MERGE_HEAD"
+        self.merge_msg_file = self.git_dir / "MERGE_MSG"
+        self.stash_file = self.git_dir / "stash"
+
+    
