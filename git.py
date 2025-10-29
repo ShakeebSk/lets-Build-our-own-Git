@@ -342,6 +342,33 @@ class Repository:
         return "HEAD"
 
 
+    def is_detached_head(self) -> bool:
+        if not self.head_file.exists():
+            return False
+        head_content = self.head_file.read_text().strip()
+        return not head_content.startswith("ref:")
+
+    def get_head_commit(self) -> Optional[str]:
+        if not self.head_file.exists():
+            return None
+        head_content = self.head_file.read_text().strip()
+        if head_content.startswith("ref: refs/heads/"):
+            branch = head_content[16:]
+            return self.get_branch_commit(branch)
+        else:
+            return head_content
+
+    def get_branch_commit(self, branch: str) -> Optional[str]:
+        branch_file = self.heads_dir / branch
+        if branch_file.exists():
+            return branch_file.read_text().strip()
+        return None
+
+    def set_branch_commit(self, branch: str, commit_hash: str):
+        branch_file = self.heads_dir / branch
+        branch_file.write_text(commit_hash + "\n")
+
+
 
 
 
