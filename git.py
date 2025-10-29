@@ -271,5 +271,17 @@ class Repository:
             print(f"Directory {path} already up to date")
 
 
-    
+    def add_path(self, path: str) -> None:
+        full_path = self.path / path
+        if not full_path.exists():
+            raise FileNotFoundError(f"Path {path} not found")
+        if full_path.is_file():
+            self.add_file(path)
+        elif full_path.is_dir():
+            self.add_directory(path)
+        else:
+            raise ValueError(f"{path} is neither a file nor a directory")
+
+
+
 
