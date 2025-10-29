@@ -211,3 +211,13 @@ class Repository:
         self.head_file.write_text("ref: refs/heads/master\n")
         self.save_index({})
         print(f"Initialized empty Git repository in {self.git_dir}")
+        return True
+
+    def store_object(self, obj: GitObject) -> str:
+        obj_hash = obj.hash()
+        obj_dir = self.objects_dir / obj_hash[:2]
+        obj_file = obj_dir / obj_hash[2:]
+        if not obj_file.exists():
+            obj_dir.mkdir(exist_ok=True)
+            obj_file.write_bytes(obj.serialize())
+        return obj_hash
