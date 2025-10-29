@@ -246,3 +246,30 @@ class Repository:
         self.save_index(index)
         print(f"Added {path}")
 
+    def add_directory(self, path: str):
+        full_path = self.path / path
+        if not full_path.exists():
+            raise FileNotFoundError(f"Directory {path} not found")
+        if not full_path.is_dir():
+            raise ValueError(f"{path} is not a directory")
+        index = self.load_index()
+        added_count = 0
+        for file_path in full_path.rglob("*"):
+            if file_path.is_file():
+                if ".git" in file_path.parts:
+                    continue
+                content = file_path.read_bytes()
+                blob = Blob(content)
+                blob_hash = self.store_object(blob)
+                rel_path = str(file_path.relative_to(self.path))
+                index[rel_path] = blob_hash
+                added_count += 1
+        self.save_index(index)
+        if added_count > 0:
+            print(f"Added {added_count} files from directory {path}")
+        else:
+            print(f"Directory {path} already up to date")
+
+
+    
+
