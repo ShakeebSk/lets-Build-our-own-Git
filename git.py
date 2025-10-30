@@ -538,3 +538,23 @@ class Repository:
         self.head_file.write_text(f"ref: refs/heads/{branch}\n")
         self.restore_working_directory(branch, files_to_clear)
         print(f"Switched to branch {branch}")
+
+
+    def restore_tree(self, tree_hash: str, path: Path):
+        tree_obj = self.load_object(tree_hash)
+        tree = Tree.from_content(tree_obj.content)
+        for mode, name, obj_hash in tree.entries:
+            file_path = path / name
+            if mode.startswith("100"):
+                blob_obj = self.load_object(obj_hash)
+                file_path.write_bytes(blob_obj.content)
+            elif mode.startswith("400"):
+                file_path.mkdir(exist_ok=True)
+                self.restore_tree(obj_hash, file_path)
+
+
+
+
+
+
+
