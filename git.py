@@ -432,3 +432,20 @@ class Repository:
         return commit_hash
 
 
+    def get_files_from_tree_recursive(self, tree_hash: str, prefix: str = "") -> Set[str]:
+        files = set()
+        try:
+            tree_obj = self.load_object(tree_hash)
+            tree = Tree.from_content(tree_obj.content)
+            for mode, name, obj_hash in tree.entries:
+                full_name = f"{prefix}{name}"
+                if mode.startswith("100"):
+                    files.add(full_name)
+                elif mode.startswith("400"):
+                    subtree_files = self.get_files_from_tree_recursive(obj_hash, f"{full_name}/")
+                    files.update(subtree_files)
+        except Exception as e:
+            print(f"Warning: Could not read tree {tree_hash}: {e}")
+        return files
+
+    
