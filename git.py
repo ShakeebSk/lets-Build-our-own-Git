@@ -506,4 +506,35 @@ class Repository:
 
 
 
+    def checkout_branch(self, branch: str, create_branch: bool):
+        previous_branch = self.get_current_branch()
+        files_to_clear = set()
+        
+        try:
+            previous_commit_hash = self.get_head_commit()
+            if previous_commit_hash:
+                prev_commit_object = self.load_object(previous_commit_hash)
+                prev_commit = Commit.from_content(prev_commit_object.content)
+                if prev_commit.tree_hash:
+                    files_to_clear = self.get_files_from_tree_recursive(prev_commit.tree_hash)
+        except Exception:
+            files_to_clear = set()
 
+        branch_file = self.heads_dir / branch
+        if not branch_file.exists():
+            if create_branch:
+                previous_commit_hash = self.get_head_commit()
+                if previous_commit_hash:
+                    self.set_branch_commit(branch, previous_commit_hash)
+                    print(f"Created new branch {branch}")
+                else:
+                    print("No commits yet, cannot create a branch")
+                    return
+            else:
+                print(f"Branch '{branch}' not found.")
+                print(f"Use 'python3 main.py checkout -b {branch}' to create and switch to a new branch.")
+                return
+        
+        self.head_file.write_text(f"ref: refs/heads/{branch}\n")
+        self.restore_working_directory(branch, files_to_clear)
+        print(f"Switched to branch {branch}")
