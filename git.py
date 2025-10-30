@@ -468,3 +468,42 @@ class Repository:
             self.checkout_branch(target, create_branch)
 
 
+
+    def checkout_commit(self, commit_hash: str):
+        """Checkout a specific commit (detached HEAD state)"""
+        # Get files from current state
+        files_to_clear = set()
+        current_head = self.get_head_commit()
+        if current_head:
+            try:
+                commit_obj = self.load_object(current_head)
+                commit = Commit.from_content(commit_obj.content)
+                if commit.tree_hash:
+                    files_to_clear = self.get_files_from_tree_recursive(commit.tree_hash)
+            except:
+                pass
+
+        # Clear working directory
+        for rel_path in sorted(files_to_clear):
+            file_path = self.path / rel_path
+            try:
+                if file_path.is_file():
+                    file_path.unlink()
+            except:
+                pass
+
+        # Restore commit's tree
+        commit_obj = self.load_object(commit_hash)
+        commit = Commit.from_content(commit_obj.content)
+        if commit.tree_hash:
+            self.restore_tree(commit.tree_hash, self.path)
+
+        # Set HEAD to commit hash (detached)
+        self.head_file.write_text(commit_hash + "\n")
+        self.save_index({})
+        print(f"HEAD is now at {commit_hash[:7]} (detached HEAD)")
+        print(f"Commit message: {commit.message}")
+
+
+
+
