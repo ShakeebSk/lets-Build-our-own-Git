@@ -448,4 +448,23 @@ class Repository:
             print(f"Warning: Could not read tree {tree_hash}: {e}")
         return files
 
-    
+
+    def checkout(self, target: str, create_branch: bool = False):
+        # Check if target is a commit hash
+        is_commit = False
+        try:
+            if len(target) >= 7 and all(c in '0123456789abcdef' for c in target):
+                # Try to load as object
+                self.load_object(target)
+                is_commit = True
+        except:
+            pass
+
+        if is_commit:
+            # Checkout commit (detached HEAD)
+            self.checkout_commit(target)
+        else:
+            # Checkout branch
+            self.checkout_branch(target, create_branch)
+
+
