@@ -553,7 +553,26 @@ class Repository:
                 self.restore_tree(obj_hash, file_path)
 
 
+    def restore_working_directory(self, branch: str, files_to_clear: Set[str]):
+        target_commit_hash = self.get_branch_commit(branch)
+        if not target_commit_hash:
+            return
 
+        for rel_path in sorted(files_to_clear):
+            file_path = self.path / rel_path
+            try:
+                if file_path.is_file():
+                    file_path.unlink()
+            except:
+                pass
+
+        target_commit_obj = self.load_object(target_commit_hash)
+        target_commit = Commit.from_content(target_commit_obj.content)
+
+        if target_commit.tree_hash:
+            self.restore_tree(target_commit.tree_hash, self.path)
+
+        self.save_index({})
 
 
 
