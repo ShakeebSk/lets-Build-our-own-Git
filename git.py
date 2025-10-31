@@ -605,3 +605,24 @@ class Repository:
                 print(f"{current_marker}{branch}")
 
 
+    def log(self, max_count: int = 10):
+        commit_hash = self.get_head_commit()
+        if not commit_hash:
+            print("No commits yet!")
+            return
+
+        count = 0
+        while commit_hash and count < max_count:
+            commit_obj = self.load_object(commit_hash)
+            commit = Commit.from_content(commit_obj.content)
+
+            print(f"commit {commit_hash}")
+            if len(commit.parent_hashes) > 1:
+                parents_str = " ".join(commit.parent_hashes)
+                print(f"Merge: {parents_str[:14]}...")
+            print(f"Author: {commit.author}")
+            print(f"Date: {time.ctime(commit.timestamp)}")
+            print(f"\n    {commit.message}\n")
+
+            commit_hash = commit.parent_hashes[0] if commit.parent_hashes else None
+            count += 1
