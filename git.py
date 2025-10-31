@@ -643,3 +643,27 @@ class Repository:
         except Exception as e:
             print(f"Warning: Could not read tree {tree_hash}: {e}")
         return index
+
+
+
+    def get_all_files(self) -> List[Path]:
+        files = []
+        for item in self.path.rglob("*"):
+            if ".git" in item.parts:
+                continue
+            if item.is_file():
+                files.append(item)
+        return files
+
+
+
+
+
+
+
+
+
+
+
+
+
