@@ -954,4 +954,32 @@ class Repository:
 
 
 
+    def restore_merged_files(self, index: Dict[str, str], conflicts: Set[str]):
+        """Restore files after merge, creating conflict markers for conflicts"""
+        for file_path, blob_hash in index.items():
+            full_path = self.path / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            if file_path in conflicts:
+                # Create conflict markers
+                try:
+                    current_content = full_path.read_bytes() if full_path.exists() else b""
+                    branch_content = self.load_object(blob_hash).content
+                    
+                    conflict_content = (
+                        b"<<<<<<< HEAD\n" +
+                        current_content +
+                        b"\n=======\n" +
+                        branch_content +
+                        b"\n>>>>>>> MERGE_HEAD\n"
+                    )
+                    full_path.write_bytes(conflict_content)
+                except:
+                    pass
+            else:
+                # Normal file restore
+                blob_obj = self.load_object(blob_hash)
+                full_path.write_bytes(blob_obj.content)
+
+
 
