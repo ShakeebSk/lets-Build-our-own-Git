@@ -894,6 +894,17 @@ class Repository:
         return ancestors
 
 
+    def get_commit_file_index(self, commit_hash: str) -> Dict[str, str]:
+        """Get file index from a commit"""
+        try:
+            commit_obj = self.load_object(commit_hash)
+            commit = Commit.from_content(commit_obj.content)
+            if commit.tree_hash:
+                return self.build_index_from_tree(commit.tree_hash)
+        except:
+            pass
+        return {}
+
 
 
 
