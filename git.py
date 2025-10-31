@@ -576,4 +576,32 @@ class Repository:
 
 
 
+    def branch(self, branch_name: str = None, delete: bool = False):
+        if delete and branch_name:
+            branch_file = self.heads_dir / branch_name
+            if branch_file.exists():
+                branch_file.unlink()
+                print(f"Deleted branch {branch_name}")
+            else:
+                print(f"Branch {branch_name} not found")
+            return
+
+        current_branch = self.get_current_branch()
+        if branch_name:
+            current_commit = self.get_head_commit()
+            if current_commit:
+                self.set_branch_commit(branch_name, current_commit)
+                print(f"Created branch {branch_name}")
+            else:
+                print(f"No commits yet, cannot create a new branch")
+        else:
+            branches = []
+            for branch_file in self.heads_dir.iterdir():
+                if branch_file.is_file() and not branch_file.name.startswith("."):
+                    branches.append(branch_file.name)
+
+            for branch in sorted(branches):
+                current_marker = "* " if branch == current_branch else "  "
+                print(f"{current_marker}{branch}")
+
 
