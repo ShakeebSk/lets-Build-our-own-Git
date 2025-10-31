@@ -744,7 +744,92 @@ class Repository:
         if not staged_files and not unstaged_files and not deleted_files and not untracked_files:
             print("\nnothing to commit, working tree clean")
 
+    def merge(self, branch: str, no_ff: bool = False):
+        """Merge another branch into current branch"""
+        if self.is_detached_head():
+            print("Cannot merge in detached HEAD state")
+            return
 
+        current_branch = self.get_current_branch()
+        if branch == current_branch:
+            print(f"Cannot merge branch '{branch}' into itself")
+            return
+
+        # Get branch commit
+        branch_commit_hash = self.get_branch_commit(branch)
+        if not branch_commit_hash:
+            print(f"Branch '{branch}' not found")
+            return
+
+        current_commit_hash = self.get_head_commit()
+        if not current_commit_hash:
+            print("No commits on current branch")
+            return
+
+        # Check if already up to date
+        if current_commit_hash == branch_commit_hash:
+            print("Already up to date")
+            return
+
+        # Check if fast-forward is possible
+        if not no_ff and self.is_ancestor(current_commit_hash, branch_commit_hash):
+            # Fast-forward merge
+            self.set_branch_commit(current_branch, branch_commit_hash)
+            self.restore_working_directory(current_branch, set())
+            print(f"Fast-forward merge to {branch_commit_hash[:7]}")
+            return
+
+        # Three-way merge needed
+        print(f"Merging branch '{branch}' into '{current_branch}'")
+        
+        # Find common ancestor
+        common_ancestor = self.find_common_ancestor(current_commit_hash, branch_commit_hash)
+        
+        if not common_ancestor:
+            print("No common ancestor found, cannot merge")
+            return
+
+        # Get file indexes for all three commits
+        base_index = self.get_commit_file_index(common_ancestor)
+        current_index = self.get_commit_file_index(current_commit_hash)
+        branch_index = self.get_commit_file_index(branch_commit_hash)
+
+        # Perform three-way merge
+        merged_index, conflicts = self.three_way_merge(
+            base_index, current_index, branch_index
+        )
+
+        if conflicts:
+            print(f"\nAutomatic merge failed; fix conflicts and then commit the result.")
+            print(f"Conflicts in files:")
+            for file in sorted(conflicts):
+                print(f"   {file}")
+            
+            # Save merge state
+            self.merge_head_file.write_text(branch_commit_hash + "\n")
+            self.merge_msg_file.write_text(f"Merge branch '{branch}' into {current_branch}\n")
+            
+            # Write conflicted files
+            self.save_index(merged_index)
+            self.restore_merged_files(merged_index, conflicts)
+        else:
+            # Auto-merge successful
+            self.save_index(merged_index)
+            self.restore_merged_files(merged_index, set())
+            
+            # Create merge commit
+            tree_hash = self.create_tree_from_index()
+            merge_commit = Commit(
+                tree_hash=tree_hash,
+                parent_hashes=[current_commit_hash, branch_commit_hash],
+                author="PyGit User <user@pygit.com>",
+                committer="PyGit User <user@pygit.com>",
+                message=f"Merge branch '{branch}' into {current_branch}",
+            )
+            commit_hash = self.store_object(merge_commit)
+            self.set_branch_commit(current_branch, commit_hash)
+            self.save_index({})
+            print(f"Merge successful. Created commit {commit_hash[:7]}")
 
 
 
