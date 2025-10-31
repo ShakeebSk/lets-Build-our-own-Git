@@ -873,3 +873,30 @@ class Repository:
         return None
 
 
+    def get_all_ancestors(self, commit_hash: str) -> Set[str]:
+        """Get all ancestors of a commit"""
+        ancestors = set()
+        stack = [commit_hash]
+        
+        while stack:
+            current = stack.pop()
+            if current in ancestors:
+                continue
+            ancestors.add(current)
+            
+            try:
+                commit_obj = self.load_object(current)
+                commit = Commit.from_content(commit_obj.content)
+                stack.extend(commit.parent_hashes)
+            except:
+                continue
+        
+        return ancestors
+
+
+
+
+
+
+
+
