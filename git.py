@@ -626,3 +626,20 @@ class Repository:
 
             commit_hash = commit.parent_hashes[0] if commit.parent_hashes else None
             count += 1
+
+
+    def build_index_from_tree(self, tree_hash: str, prefix: str = "") -> Dict[str, str]:
+        index = {}
+        try:
+            tree_obj = self.load_object(tree_hash)
+            tree = Tree.from_content(tree_obj.content)
+            for mode, name, obj_hash in tree.entries:
+                full_name = f"{prefix}{name}"
+                if mode.startswith("100"):
+                    index[full_name] = obj_hash
+                elif mode.startswith("400"):
+                    subindex = self.build_index_from_tree(obj_hash, f"{full_name}/")
+                    index.update(subindex)
+        except Exception as e:
+            print(f"Warning: Could not read tree {tree_hash}: {e}")
+        return index
