@@ -982,4 +982,64 @@ class Repository:
                 full_path.write_bytes(blob_obj.content)
 
 
+    def cherry_pick(self, commit_hash: str):
+        """Apply changes from a specific commit to current branch"""
+        try:
+            # Load the commit to cherry-pick
+            commit_obj = self.load_object(commit_hash)
+            commit = Commit.from_content(commit_obj.content)
+        except:
+            print(f"Commit {commit_hash} not found")
+            return
 
+        if not commit.parent_hashes:
+            print("Cannot cherry-pick initial commit")
+            return
+
+        # Get file indexes
+        parent_hash = commit.parent_hashes[0]
+        parent_index = self.get_commit_file_index(parent_hash)
+        commit_index = self.get_commit_file_index(commit_hash)
+        current_head = self.get_head_commit()
+        current_index = self.get_commit_file_index(current_head) if current_head else {}
+
+        # Calculate changes in the commit
+        changes = {}
+        for file in set(parent_index.keys()) | set(commit_index.keys()):
+            parent_blob = parent_index.get(file)
+            commit_blob = commit_index.get(file)
+            
+            if parent_blob != commit_blob:
+                changes[file] = commit_blob
+
+        # Apply changes to current index
+        index = self.load_index()
+        conflicts = []
+        
+        for file, new_blob in changes.items():
+            if file in current_index and current_index[file] != parent_index.get(file):
+                # File was modified in both - potential conflict
+                conflicts.append(file)
+            else:
+                if new_blob:
+                    index[file] = new_blob
+                elif file in index:
+                    del index[file]
+
+        if conflicts:
+            print(f"Conflicts detected in: {', '.join(conflicts)}")
+            print("Please resolve conflicts and commit manually")
+            return
+
+        # Save index and restore files
+        self.save_index(index)
+        for file, blob_hash in index.items():
+            if blob_hash:
+                full_path = self.path / file
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                blob_obj = self.load_object(blob_hash)
+                full_path.write_bytes(blob_obj.content)
+
+        print(f"Cherry-picked commit {commit_hash[:7]}")
+        print(f"Message: {commit.message}")
+        print("Changes staged. Run 'commit' to create a new commit.")
