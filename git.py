@@ -851,5 +851,25 @@ class Repository:
         
         return False
 
+    def find_common_ancestor(self, commit1: str, commit2: str) -> Optional[str]:
+        """Find the common ancestor of two commits"""
+        ancestors1 = self.get_all_ancestors(commit1)
+        
+        current = commit2
+        visited = set()
+        
+        while current and current not in visited:
+            if current in ancestors1:
+                return current
+            visited.add(current)
+            
+            try:
+                commit_obj = self.load_object(current)
+                commit = Commit.from_content(commit_obj.content)
+                current = commit.parent_hashes[0] if commit.parent_hashes else None
+            except:
+                break
+        
+        return None
 
 
