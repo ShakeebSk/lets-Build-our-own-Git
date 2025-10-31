@@ -658,7 +658,91 @@ class Repository:
 
 
 
+    def status(self):
+        current_branch = self.get_current_branch()
+        if self.is_detached_head():
+            head_commit = self.get_head_commit()
+            print(f"HEAD detached at {head_commit[:7] if head_commit else 'unknown'}")
+        else:
+            print(f"On branch {current_branch}")
 
+        # Check for merge in progress
+        if self.merge_head_file.exists():
+            print("\nMerge in progress")
+            print("  (fix conflicts and run 'commit' to complete merge)")
+
+        index = self.load_index()
+        current_commit_hash = self.get_head_commit()
+
+        last_index_files = {}
+        if current_commit_hash:
+            try:
+                commit_obj = self.load_object(current_commit_hash)
+                commit = Commit.from_content(commit_obj.content)
+                if commit.tree_hash:
+                    last_index_files = self.build_index_from_tree(commit.tree_hash)
+            except:
+                last_index_files = {}
+
+        working_files = {}
+        for item in self.get_all_files():
+            rel_path = str(item.relative_to(self.path))
+            try:
+                content = item.read_bytes()
+                blob = Blob(content)
+                working_files[rel_path] = blob.hash()
+            except:
+                continue
+
+        staged_files = []
+        unstaged_files = []
+        untracked_files = []
+        deleted_files = []
+
+        for file_path in set(index.keys()) | set(last_index_files.keys()):
+            index_hash = index.get(file_path)
+            last_index_hash = last_index_files.get(file_path)
+
+            if index_hash and not last_index_hash:
+                staged_files.append(("new file", file_path))
+            elif index_hash and last_index_hash and index_hash != last_index_hash:
+                staged_files.append(("modified", file_path))
+
+        if staged_files:
+            print("\nChanges to be committed:")
+            for stage_status, file_path in sorted(staged_files):
+                print(f"   {stage_status}: {file_path}")
+
+        for file_path in working_files:
+            if file_path in index:
+                if working_files[file_path] != index[file_path]:
+                    unstaged_files.append(file_path)
+
+        if unstaged_files:
+            print("\nChanges not staged for commit:")
+            for file_path in sorted(unstaged_files):
+                print(f"   modified: {file_path}")
+
+        for file_path in working_files:
+            if file_path not in index and file_path not in last_index_files:
+                untracked_files.append(file_path)
+
+        if untracked_files:
+            print("\nUntracked files:")
+            for file_path in sorted(untracked_files):
+                print(f"   {file_path}")
+
+        for file_path in index:
+            if file_path not in working_files:
+                deleted_files.append(file_path)
+
+        if deleted_files:
+            print("\nDeleted files:")
+            for file_path in sorted(deleted_files):
+                print(f"   deleted: {file_path}")
+
+        if not staged_files and not unstaged_files and not deleted_files and not untracked_files:
+            print("\nnothing to commit, working tree clean")
 
 
 
