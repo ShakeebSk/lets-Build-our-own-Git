@@ -832,7 +832,24 @@ class Repository:
             print(f"Merge successful. Created commit {commit_hash[:7]}")
 
 
-
+    def is_ancestor(self, ancestor_hash: str, descendant_hash: str) -> bool:
+        """Check if ancestor_hash is an ancestor of descendant_hash"""
+        current = descendant_hash
+        visited = set()
+        
+        while current and current not in visited:
+            if current == ancestor_hash:
+                return True
+            visited.add(current)
+            
+            try:
+                commit_obj = self.load_object(current)
+                commit = Commit.from_content(commit_obj.content)
+                current = commit.parent_hashes[0] if commit.parent_hashes else None
+            except:
+                break
+        
+        return False
 
 
 
