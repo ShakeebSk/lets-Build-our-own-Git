@@ -906,7 +906,51 @@ class Repository:
         return {}
 
 
-
+    def three_way_merge(
+        self,
+        base: Dict[str, str],
+        current: Dict[str, str],
+        branch: Dict[str, str]
+    ) -> Tuple[Dict[str, str], Set[str]]:
+        """Perform three-way merge, return merged index and conflicts"""
+        merged = {}
+        conflicts = set()
+        
+        all_files = set(base.keys()) | set(current.keys()) | set(branch.keys())
+        
+        for file in all_files:
+            base_hash = base.get(file)
+            current_hash = current.get(file)
+            branch_hash = branch.get(file)
+            
+            # File unchanged in both branches
+            if current_hash == branch_hash:
+                if current_hash:
+                    merged[file] = current_hash
+            # File unchanged in current, changed in branch
+            elif current_hash == base_hash and branch_hash != base_hash:
+                if branch_hash:
+                    merged[file] = branch_hash
+            # File unchanged in branch, changed in current
+            elif branch_hash == base_hash and current_hash != base_hash:
+                if current_hash:
+                    merged[file] = current_hash
+            # File changed in both branches differently - CONFLICT
+            elif current_hash != branch_hash:
+                if current_hash and branch_hash:
+                    # Both modified - create conflict
+                    conflicts.add(file)
+                    merged[file] = current_hash  # Keep current for now
+                elif current_hash and not branch_hash:
+                    # Modified in current, deleted in branch - CONFLICT
+                    conflicts.add(file)
+                    merged[file] = current_hash
+                elif branch_hash and not current_hash:
+                    # Deleted in current, modified in branch - CONFLICT
+                    conflicts.add(file)
+                    merged[file] = branch_hash
+        
+        return merged, conflicts
 
 
 
