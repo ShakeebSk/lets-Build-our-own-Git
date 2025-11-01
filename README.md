@@ -1,75 +1,101 @@
-# 🧬 PyGit – A Simple Git Clone in Python
+<h1 align="center">🚀 LETS-BUILD-OUR-OWN-GIT</h1>
+
+<p align="center"><em>Empower Innovation Through Seamless Version Control Mastery</em></p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/last-commit/ShakeebSk/lets-Build-our-own-Git?color=blue&label=last%20commit">
+  <img src="https://img.shields.io/badge/python-100%25-blue">
+  <img src="https://img.shields.io/github/languages/count/ShakeebSk/lets-Build-our-own-Git?color=blue&label=languages">
+</p>
+
+<p align="center">
+  Built with the tools and technologies:<br>
+  <img src="https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white">
+  <img src="https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54">
+</p>
+
+---
+
+# 🧬 PyGit — A Simple Yet Complete Git Clone in Python
+
+**PyGit** is a fully functional educational Git clone written entirely in **Python**, re-creating Git’s internals from scratch — including commits, branches, merges, stashes, tags, cherry-picks, and more.  
+
+It’s built for anyone curious to **understand how Git truly works under the hood**.
+
+> 🧠 *“To truly master Git, build your own.”*
+
+---
 
 ## 📖 What is PyGit?
 
-PyGit is a lightweight Python-based implementation of Git that helps you understand the core internals of version control systems.
-It mimics how Git stores files, tracks history, and manages branches — all using Python’s standard library.
+PyGit replicates how Git stores, tracks, and manages files — using **blobs**, **trees**, and **commits** — entirely with Python’s standard libraries.  
+Every commit, branch, and tag is built the same way Git does it internally.
 
-🔍 Ideal for developers and students who want to see how Git actually works behind the scenes.
+---
 
-### ⚙️ Core Components
-- 🧩 1. GitObject Class
+## ⚙️ Core Components
 
-- Base class for all Git objects (Blob, Tree, Commit)
+| Component | Description |
+|------------|-------------|
+| 🧩 **GitObject** | Base class for all Git objects (`Blob`, `Tree`, `Commit`, `Tag`). Handles compression + hashing (SHA-1). |
+| 📄 **Blob** | Stores raw file contents. |
+| 🌲 **Tree** | Represents directory structure, storing references to blobs and sub-trees. |
+| 🕓 **Commit** | Stores metadata (author, message, timestamp) and links to parent commit(s). |
+| 🏗️ **Repository** | Manages `.pygit/`, objects, branches, HEAD, and commands. |
 
-- Handles serialization/deserialization with zlib compression
+---
 
-- Generates SHA-1 hashes for unique object identification
+## 🚀 Major Features
 
-### 📄 2. Blob Objects
+| Category | Commands | Description |
+|-----------|-----------|-------------|
+| 🧱 Core VCS | `init`, `add`, `commit`, `status`, `log`, `diff` | Basic Git-like operations |
+| 🌿 Branching | `branch`, `checkout`, `checkout -b`, `branch -d` | Create, switch, and delete branches |
+| 🔀 Merging | `merge` | Fast-forward and 3-way merges with conflict resolution |
+| 🍒 Cherry-Pick | `cherry-pick <hash>` | Apply a specific commit onto the current branch |
+| 🏷️ Tagging | `tag`, `tag -a`, `tag -d` | Create annotated or lightweight tags |
+| 💾 Stashing | `stash save`, `stash list`, `stash pop` | Save uncommitted work and apply later |
+| 🔁 Reset | `reset --soft`, `--mixed`, `--hard` | Move HEAD to a previous commit safely |
+| 🧭 Checkout Commit | `checkout <commit>` | Enter detached HEAD mode |
+| 🧰 Diff System | `diff`, `diff --cached` | Compare changes between index, commits, and working directory |
 
-- Represent individual files
+---
 
-- Store and compress raw file data
+## ⚔️ PyGit vs Git — Feature Comparison
 
-### 🌲 3. Tree Objects
+| Feature | Real Git | PyGit |
+|----------|-----------|-------|
+| Repository Initialization | ✅ | ✅ |
+| Add / Commit | ✅ | ✅ |
+| Branching & Checkout | ✅ | ✅ |
+| Merge (3-way / fast-forward) | ✅ | ✅ |
+| Stash | ✅ | ✅ |
+| Cherry-pick | ✅ | ✅ |
+| Tagging | ✅ | ✅ |
+| Reset (soft/mixed/hard) | ✅ | ✅ |
+| Remote (`push`, `pull`, `clone`) | ✅ | ❌ (planned) |
+| Rebase | ✅ | ❌ (future feature) |
+| Signed Commits | ✅ | ❌ |
+| Garbage Collection | ✅ | ✅ (basic) |
 
-- Represent directory structures
+---
 
-- Store references to blobs and other trees
+## 📦 Installation & Setup
 
-- Maintain file names and permissions
+### 🐍 Requirements
+- Python 3.7+
+- No external dependencies
 
-### 🕓 4. Commit Objects
+### ⚡ Quick Start
 
-- Contain metadata (author, timestamp, message)
-
-- Point to a tree object and a parent commit
-
-- Form a linked commit history chain
-
-### 🏗️ 5. Repository Class
-
-- Manages the .git/ directory
-
-- Handles object storage/retrieval
-
-- Implements core Git operations: init, add, commit, checkout, etc.
-
-## 🚀 Features
-
-✅ Repository Initialization (init)
-✅ File Staging (add)
-✅ Commit Creation (commit)
-✅ Branch Management (checkout, branch)
-✅ Commit History (log)
-✅ Status Checking (status)
-✅ Object Storage with SHA-1 hashing and zlib compression
-
-##📦 Installation & Setup
-Prerequisites
-
-### 🐍 Python 3.7+
-
-No external libraries required!
-
-Quick Start
-
-# Clone the repository
 ```bash
-git clone <this-repo-url>
-cd git_clone
-```
+# Clone this repo
+git clone https://github.com/ShakeebSk/lets-Build-our-own-Git.git
+cd lets-Build-our-own-Git
+
+# Initialize your own PyGit repository
+python3 git.py init
+
 
 # Initialize and use PyGit
 ```bash
