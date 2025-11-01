@@ -54,7 +54,7 @@ Every commit, branch, and tag is built the same way Git does it internally.
 | 🔀 Merging | `merge` | Fast-forward and 3-way merges with conflict resolution |
 | 🍒 Cherry-Pick | `cherry-pick <hash>` | Apply a specific commit onto the current branch |
 | 🏷️ Tagging | `tag`, `tag -a`, `tag -d` | Create annotated or lightweight tags |
-| 💾 Stashing | `stash save`, `stash list`, `stash pop` | Save uncommitted work and apply later |
+| 💾 Stashing | `stash save`, `stash list`,`stash list`, `stash pop` | Save uncommitted work and apply later |
 | 🔁 Reset | `reset --soft`, `--mixed`, `--hard` | Move HEAD to a previous commit safely |
 | 🧭 Checkout Commit | `checkout <commit>` | Enter detached HEAD mode |
 | 🧰 Diff System | `diff`, `diff --cached` | Compare changes between index, commits, and working directory |
@@ -150,6 +150,13 @@ git_clone/
     └── index        # Staging area
 ```
 
+
+## 🎬 PyGit Demo
+
+Here’s a quick walkthrough of **PyGit** in action — initializing a repo, adding files, committing, creating branches, and stashing changes.
+
+
+
 # 🔍 How It Works (Visualized)
 ## 🗃️ 1. Object Storage (Blobs, Trees, Commits)
 ```text
@@ -225,3 +232,4 @@ Build a foundation for distributed version control concepts
 This project is licensed under the MIT License — free for personal and educational use.
 
 👨‍💻 Author--Shakeeb Shaikh
+Total number of hrs invested =22hrs
