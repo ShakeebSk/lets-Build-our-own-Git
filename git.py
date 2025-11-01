@@ -1166,7 +1166,41 @@ class Repository:
 
 
 
+    def stash_apply(self, index: int = 0):
+        """Apply a stash without removing it"""
+        if not self.stash_file.exists():
+            print("No stashes found")
+            return
 
+        try:
+            stashes = json.loads(self.stash_file.read_text())
+        except:
+            print("No stashes found")
+            return
+
+        if not stashes or index >= len(stashes):
+            print(f"Stash@{{{index}}} not found")
+            return
+
+        stash = stashes[index]
+        stash_index = stash['index']
+
+        # Restore stashed files
+        for file_path, blob_hash in stash_index.items():
+            full_path = self.path / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                blob_obj = self.load_object(blob_hash)
+                full_path.write_bytes(blob_obj.content)
+            except:
+                print(f"Warning: Could not restore {file_path}")
+
+        # Update index
+        current_index = self.load_index()
+        current_index.update(stash_index)
+        self.save_index(current_index)
+
+        print(f"Applied stash@{{{index}}}")
 
 
 
