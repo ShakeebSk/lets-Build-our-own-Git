@@ -1099,7 +1099,27 @@ class Repository:
 
 
 
+    def stash_list(self):
+        """List all stashes"""
+        if not self.stash_file.exists():
+            print("No stashes found")
+            return
 
+        try:
+            stashes = json.loads(self.stash_file.read_text())
+        except:
+            print("No stashes found")
+            return
+
+        if not stashes:
+            print("No stashes found")
+            return
+
+        for i, stash in enumerate(stashes):
+            timestamp = time.ctime(stash['timestamp'])
+            message = stash['message']
+            branch = stash['branch']
+            print(f"stash@{{{i}}}: On {branch}: {message} ({timestamp})")
 
 
 
