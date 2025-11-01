@@ -1351,6 +1351,54 @@ class Repository:
 
 
 
+    def diff(self, target1: str = None, target2: str = None):
+        """Show differences between commits, commit and working tree, etc."""
+        if not target1 and not target2:
+            # Diff between index and working directory
+            self.diff_index_working()
+        elif target1 and not target2:
+            # Diff between commit and working directory
+            self.diff_commit_working(target1)
+        elif target1 and target2:
+            # Diff between two commits
+            self.diff_commits(target1, target2)
 
+    def diff_index_working(self):
+        """Diff between staged changes and working directory"""
+        index = self.load_index()
+        
+        if not index:
+            print("No staged changes")
+            return
+
+        for file_path, blob_hash in sorted(index.items()):
+            full_path = self.path / file_path
+            
+            if not full_path.exists():
+                print(f"\n--- a/{file_path}")
+                print(f"+++ /dev/null")
+                print(f"@@ File deleted @@")
+                continue
+            
+            try:
+                current_content = full_path.read_bytes().decode('utf-8', errors='ignore')
+                blob_obj = self.load_object(blob_hash)
+                staged_content = blob_obj.content.decode('utf-8', errors='ignore')
+                
+                if current_content != staged_content:
+                    print(f"\ndiff --git a/{file_path} b/{file_path}")
+                    print(f"--- a/{file_path}")
+                    print(f"+++ b/{file_path}")
+                    
+                    diff = difflib.unified_diff(
+                        staged_content.splitlines(keepends=True),
+                        current_content.splitlines(keepends=True),
+                        lineterm=''
+                    )
+                    
+                    for line in diff:
+                        print(line.rstrip())
+            except:
+                print(f"\nBinary files differ: {file_path}")
 
 
