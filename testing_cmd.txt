@@ -1,0 +1,67 @@
+# 1️⃣ Initialize a new repository
+python git.py init
+
+# 2️⃣ Add & Commit Files
+echo "Hello Git" > hello.txt
+python git.py add hello.txt
+python git.py commit -m "Initial commit"
+
+# 3️⃣ Create and Switch Branches
+python git.py branch feature-login
+python git.py branch          # List branches
+python git.py checkout feature-login
+echo "Feature Login Code" > login.py
+python git.py add login.py
+python git.py commit -m "Add login feature"
+
+# 4️⃣ Switch back to main branch
+python git.py checkout master
+
+# 5️⃣ Merge feature branch into master
+python git.py merge feature-login
+python git.py log
+
+# 6️⃣ Test Cherry-Pick
+echo "Hotfix for login" >> login.py
+python git.py add login.py
+python git.py commit -m "Fix login bug"
+python git.py checkout master
+python git.py cherry-pick <commit_hash_of_fix>   # Replace with actual commit hash
+
+# 7️⃣ Tagging (Lightweight and Annotated)
+python git.py tag v1.0
+python git.py tag -a v1.1 -m "Release version 1.1"
+python git.py tag                              # List all tags
+
+# 8️⃣ Detached HEAD checkout (specific commit)
+python git.py checkout <commit_hash_of_first_commit>
+python git.py log
+python git.py checkout master
+
+# 9️⃣ Stash Work
+echo "Temporary changes" >> temp.py
+python git.py stash save "WIP: temporary file"
+python git.py stash list
+python git.py stash pop
+
+# 🔟 Reset Commands
+python git.py reset <previous_commit_hash> --soft
+python git.py reset <previous_commit_hash> --mixed
+python git.py reset <previous_commit_hash> --hard
+
+# 1️⃣1️⃣ Diff and Status Checks
+echo "Change something" >> hello.txt
+python git.py diff               # Compare working directory vs staged
+python git.py add hello.txt
+python git.py diff --cached      # Compare staged vs last commit
+python git.py status
+
+# 1️⃣2️⃣ Branch Deletion
+python git.py branch -d feature-login
+
+# 1️⃣3️⃣ Garbage Collection (if supported)
+python git.py gc
+
+# ✅ Final Log and Status Check
+python git.py log -n 5
+python git.py status
