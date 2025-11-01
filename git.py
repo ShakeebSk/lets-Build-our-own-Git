@@ -1043,3 +1043,64 @@ class Repository:
         print(f"Cherry-picked commit {commit_hash[:7]}")
         print(f"Message: {commit.message}")
         print("Changes staged. Run 'commit' to create a new commit.")
+
+
+
+
+    def stash(self, message: str = None):
+        """Save current changes to stash"""
+        index = self.load_index()
+        
+        if not index:
+            print("No local changes to save")
+            return
+
+        # Create stash entry
+        stash_entry = {
+            "index": index,
+            "message": message or f"WIP on {self.get_current_branch()}",
+            "timestamp": int(time.time()),
+            "branch": self.get_current_branch(),
+            "commit": self.get_head_commit()
+        }
+
+        # Load existing stashes
+        stashes = []
+        if self.stash_file.exists():
+            try:
+                stashes = json.loads(self.stash_file.read_text())
+            except:
+                stashes = []
+
+        stashes.insert(0, stash_entry)
+        self.stash_file.write_text(json.dumps(stashes, indent=2))
+
+        # Clear working directory and index
+        for file_path in index:
+            full_path = self.path / file_path
+            try:
+                if full_path.exists():
+                    full_path.unlink()
+            except:
+                pass
+
+        self.save_index({})
+        
+        # Restore HEAD state
+        head_commit = self.get_head_commit()
+        if head_commit:
+            commit_obj = self.load_object(head_commit)
+            commit = Commit.from_content(commit_obj.content)
+            if commit.tree_hash:
+                self.restore_tree(commit.tree_hash, self.path)
+
+        print(f"Saved working directory and index state")
+        print(f"Stash message: {stash_entry['message']}")
+
+
+
+
+
+
+
+
