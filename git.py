@@ -1255,7 +1255,97 @@ class Repository:
 
 
 
+    def tag_list(self):
+        """List all tags"""
+        if not self.tags_dir.exists():
+            return
 
+        tags = []
+        for tag_file in self.tags_dir.iterdir():
+            if tag_file.is_file():
+                tags.append(tag_file.name)
+
+        if not tags:
+            print("No tags found")
+            return
+
+        for tag in sorted(tags):
+            print(tag)
+
+    def tag_delete(self, tag_name: str):
+        """Delete a tag"""
+        tag_file = self.tags_dir / tag_name
+        if not tag_file.exists():
+            print(f"Tag '{tag_name}' not found")
+            return
+
+        tag_file.unlink()
+        print(f"Deleted tag '{tag_name}'")
+
+    def reset(self, commit_hash: str, mode: str = "mixed"):
+        """Reset current HEAD to specified state"""
+        try:
+            commit_obj = self.load_object(commit_hash)
+            commit = Commit.from_content(commit_obj.content)
+        except:
+            print(f"Commit {commit_hash} not found")
+            return
+
+        if mode == "soft":
+            # Move HEAD only, keep index and working directory
+            if self.is_detached_head():
+                self.head_file.write_text(commit_hash + "\n")
+            else:
+                current_branch = self.get_current_branch()
+                self.set_branch_commit(current_branch, commit_hash)
+            print(f"Reset HEAD to {commit_hash[:7]} (soft)")
+
+        elif mode == "mixed":
+            # Move HEAD and reset index, keep working directory
+            if self.is_detached_head():
+                self.head_file.write_text(commit_hash + "\n")
+            else:
+                current_branch = self.get_current_branch()
+                self.set_branch_commit(current_branch, commit_hash)
+            
+            # Reset index to commit's tree
+            if commit.tree_hash:
+                new_index = self.build_index_from_tree(commit.tree_hash)
+                self.save_index(new_index)
+            else:
+                self.save_index({})
+            
+            print(f"Reset HEAD and index to {commit_hash[:7]} (mixed)")
+
+        elif mode == "hard":
+            # Move HEAD, reset index, and reset working directory
+            if self.is_detached_head():
+                self.head_file.write_text(commit_hash + "\n")
+            else:
+                current_branch = self.get_current_branch()
+                self.set_branch_commit(current_branch, commit_hash)
+            
+            # Clear working directory
+            current_files = self.get_files_from_tree_recursive(commit.tree_hash) if commit.tree_hash else set()
+            all_files = set(str(f.relative_to(self.path)) for f in self.get_all_files())
+            
+            for file_path in all_files:
+                full_path = self.path / file_path
+                try:
+                    if full_path.is_file():
+                        full_path.unlink()
+                except:
+                    pass
+            
+            # Restore commit's tree
+            if commit.tree_hash:
+                self.restore_tree(commit.tree_hash, self.path)
+                new_index = self.build_index_from_tree(commit.tree_hash)
+                self.save_index(new_index)
+            else:
+                self.save_index({})
+            
+            print(f"Reset HEAD, index, and working directory to {commit_hash[:7]} (hard)")
 
 
 
