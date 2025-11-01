@@ -32,9 +32,11 @@ class GitObject:
         obj_type, _ = header.split(" ")
         return cls(obj_type, content)
 
+
 class Blob(GitObject):
     def __init__(self, content: bytes):
         super().__init__("blob", content)
+
 
 class Tree(GitObject):
     def __init__(self, entries: List[Tuple[str, str, str]] = None):
@@ -67,6 +69,7 @@ class Tree(GitObject):
             tree.entries.append((mode, name, obj_hash))
             i = null_idx + 21
         return tree
+
 
 class Commit(GitObject):
     def __init__(
@@ -126,6 +129,7 @@ class Commit(GitObject):
         message = "\n".join(lines[message_start:])
         commit = cls(tree_hash, parent_hashes, author, committer, message, timestamp)
         return commit
+
 
 class Tag(GitObject):
     def __init__(
@@ -230,7 +234,6 @@ class Repository:
         except:
             return {}
 
-
     def save_index(self, index: Dict[str, str]):
         self.index_file.write_text(json.dumps(index, indent=2))
 
@@ -270,7 +273,6 @@ class Repository:
         else:
             print(f"Directory {path} already up to date")
 
-
     def add_path(self, path: str) -> None:
         full_path = self.path / path
         if not full_path.exists():
@@ -282,15 +284,12 @@ class Repository:
         else:
             raise ValueError(f"{path} is neither a file nor a directory")
 
-
-
     def load_object(self, obj_hash: str) -> GitObject:
         obj_dir = self.objects_dir / obj_hash[:2]
         obj_file = obj_dir / obj_hash[2:]
         if not obj_file.exists():
             raise FileNotFoundError(f"Object {obj_hash} not found")
         return GitObject.deserialize(obj_file.read_bytes())
-
 
     def create_tree_from_index(self):
         index = self.load_index()
@@ -332,7 +331,6 @@ class Repository:
 
         return create_tree_recursive(root_entries)
 
-
     def get_current_branch(self) -> str:
         if not self.head_file.exists():
             return "master"
@@ -340,7 +338,6 @@ class Repository:
         if head_content.startswith("ref: refs/heads/"):
             return head_content[16:]
         return "HEAD"
-
 
     def is_detached_head(self) -> bool:
         if not self.head_file.exists():
@@ -367,8 +364,6 @@ class Repository:
     def set_branch_commit(self, branch: str, commit_hash: str):
         branch_file = self.heads_dir / branch
         branch_file.write_text(commit_hash + "\n")
-
-
 
     def commit(self, message: str, author: str = "PyGit User <user@pygit.com>"):
         tree_hash = self.create_tree_from_index()
@@ -431,7 +426,6 @@ class Repository:
         self.save_index({})
         return commit_hash
 
-
     def get_files_from_tree_recursive(self, tree_hash: str, prefix: str = "") -> Set[str]:
         files = set()
         try:
@@ -447,7 +441,6 @@ class Repository:
         except Exception as e:
             print(f"Warning: Could not read tree {tree_hash}: {e}")
         return files
-
 
     def checkout(self, target: str, create_branch: bool = False):
         # Check if target is a commit hash
@@ -466,8 +459,6 @@ class Repository:
         else:
             # Checkout branch
             self.checkout_branch(target, create_branch)
-
-
 
     def checkout_commit(self, commit_hash: str):
         """Checkout a specific commit (detached HEAD state)"""
@@ -504,8 +495,6 @@ class Repository:
         print(f"HEAD is now at {commit_hash[:7]} (detached HEAD)")
         print(f"Commit message: {commit.message}")
 
-
-
     def checkout_branch(self, branch: str, create_branch: bool):
         previous_branch = self.get_current_branch()
         files_to_clear = set()
@@ -539,7 +528,6 @@ class Repository:
         self.restore_working_directory(branch, files_to_clear)
         print(f"Switched to branch {branch}")
 
-
     def restore_tree(self, tree_hash: str, path: Path):
         tree_obj = self.load_object(tree_hash)
         tree = Tree.from_content(tree_obj.content)
@@ -551,7 +539,6 @@ class Repository:
             elif mode.startswith("400"):
                 file_path.mkdir(exist_ok=True)
                 self.restore_tree(obj_hash, file_path)
-
 
     def restore_working_directory(self, branch: str, files_to_clear: Set[str]):
         target_commit_hash = self.get_branch_commit(branch)
@@ -573,8 +560,6 @@ class Repository:
             self.restore_tree(target_commit.tree_hash, self.path)
 
         self.save_index({})
-
-
 
     def branch(self, branch_name: str = None, delete: bool = False):
         if delete and branch_name:
@@ -604,7 +589,6 @@ class Repository:
                 current_marker = "* " if branch == current_branch else "  "
                 print(f"{current_marker}{branch}")
 
-
     def log(self, max_count: int = 10):
         commit_hash = self.get_head_commit()
         if not commit_hash:
@@ -627,7 +611,6 @@ class Repository:
             commit_hash = commit.parent_hashes[0] if commit.parent_hashes else None
             count += 1
 
-
     def build_index_from_tree(self, tree_hash: str, prefix: str = "") -> Dict[str, str]:
         index = {}
         try:
@@ -644,8 +627,6 @@ class Repository:
             print(f"Warning: Could not read tree {tree_hash}: {e}")
         return index
 
-
-
     def get_all_files(self) -> List[Path]:
         files = []
         for item in self.path.rglob("*"):
@@ -654,9 +635,6 @@ class Repository:
             if item.is_file():
                 files.append(item)
         return files
-
-
-
 
     def status(self):
         current_branch = self.get_current_branch()
@@ -831,7 +809,6 @@ class Repository:
             self.save_index({})
             print(f"Merge successful. Created commit {commit_hash[:7]}")
 
-
     def is_ancestor(self, ancestor_hash: str, descendant_hash: str) -> bool:
         """Check if ancestor_hash is an ancestor of descendant_hash"""
         current = descendant_hash
@@ -872,7 +849,6 @@ class Repository:
         
         return None
 
-
     def get_all_ancestors(self, commit_hash: str) -> Set[str]:
         """Get all ancestors of a commit"""
         ancestors = set()
@@ -893,7 +869,6 @@ class Repository:
         
         return ancestors
 
-
     def get_commit_file_index(self, commit_hash: str) -> Dict[str, str]:
         """Get file index from a commit"""
         try:
@@ -904,7 +879,6 @@ class Repository:
         except:
             pass
         return {}
-
 
     def three_way_merge(
         self,
@@ -952,8 +926,6 @@ class Repository:
         
         return merged, conflicts
 
-
-
     def restore_merged_files(self, index: Dict[str, str], conflicts: Set[str]):
         """Restore files after merge, creating conflict markers for conflicts"""
         for file_path, blob_hash in index.items():
@@ -980,7 +952,6 @@ class Repository:
                 # Normal file restore
                 blob_obj = self.load_object(blob_hash)
                 full_path.write_bytes(blob_obj.content)
-
 
     def cherry_pick(self, commit_hash: str):
         """Apply changes from a specific commit to current branch"""
@@ -1044,9 +1015,6 @@ class Repository:
         print(f"Message: {commit.message}")
         print("Changes staged. Run 'commit' to create a new commit.")
 
-
-
-
     def stash(self, message: str = None):
         """Save current changes to stash"""
         index = self.load_index()
@@ -1097,8 +1065,6 @@ class Repository:
         print(f"Saved working directory and index state")
         print(f"Stash message: {stash_entry['message']}")
 
-
-
     def stash_list(self):
         """List all stashes"""
         if not self.stash_file.exists():
@@ -1120,8 +1086,6 @@ class Repository:
             message = stash['message']
             branch = stash['branch']
             print(f"stash@{{{i}}}: On {branch}: {message} ({timestamp})")
-
-
 
     def stash_pop(self, index: int = 0):
         """Apply and remove a stash"""
@@ -1164,8 +1128,6 @@ class Repository:
         print(f"Applied stash@{{{index}}}")
         print(f"Dropped stash@{{{index}}}")
 
-
-
     def stash_apply(self, index: int = 0):
         """Apply a stash without removing it"""
         if not self.stash_file.exists():
@@ -1201,7 +1163,6 @@ class Repository:
         self.save_index(current_index)
 
         print(f"Applied stash@{{{index}}}")
-
 
     def stash_drop(self, index: int = 0):
         """Remove a stash"""
@@ -1252,8 +1213,6 @@ class Repository:
             # Create lightweight tag
             tag_file.write_text(target_commit + "\n")
             print(f"Created tag '{tag_name}' at {target_commit[:7]}")
-
-
 
     def tag_list(self):
         """List all tags"""
@@ -1347,10 +1306,6 @@ class Repository:
             
             print(f"Reset HEAD, index, and working directory to {commit_hash[:7]} (hard)")
 
-
-
-
-
     def diff(self, target1: str = None, target2: str = None):
         """Show differences between commits, commit and working tree, etc."""
         if not target1 and not target2:
@@ -1401,7 +1356,6 @@ class Repository:
             except:
                 print(f"\nBinary files differ: {file_path}")
 
-
     def diff_commit_working(self, commit_hash: str):
         """Diff between a commit and working directory"""
         try:
@@ -1449,9 +1403,6 @@ class Repository:
                 except:
                     print(f"\nBinary files differ: {file_path}")
 
-
-
-    
     def diff_commits(self, commit1: str, commit2: str):
         """Diff between two commits"""
         try:
@@ -1496,8 +1447,7 @@ class Repository:
                     print(f"\nBinary files differ: {file_path}")
 
 
-
-    def main():
+def main():
     parser = argparse.ArgumentParser(description="PyGit - A full-featured Git clone!")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -1699,6 +1649,3 @@ class Repository:
 
 if __name__ == "__main__":
     main()
-
-
-
