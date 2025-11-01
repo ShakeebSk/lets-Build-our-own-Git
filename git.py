@@ -1203,4 +1203,64 @@ class Repository:
         print(f"Applied stash@{{{index}}}")
 
 
+    def stash_drop(self, index: int = 0):
+        """Remove a stash"""
+        if not self.stash_file.exists():
+            print("No stashes found")
+            return
+
+        try:
+            stashes = json.loads(self.stash_file.read_text())
+        except:
+            print("No stashes found")
+            return
+
+        if not stashes or index >= len(stashes):
+            print(f"Stash@{{{index}}} not found")
+            return
+
+        stashes.pop(index)
+        self.stash_file.write_text(json.dumps(stashes, indent=2))
+        print(f"Dropped stash@{{{index}}}")
+
+    def tag_create(self, tag_name: str, commit_hash: str = None, message: str = None, annotated: bool = False):
+        """Create a tag"""
+        target_commit = commit_hash or self.get_head_commit()
+        
+        if not target_commit:
+            print("No commits to tag")
+            return
+
+        tag_file = self.tags_dir / tag_name
+        if tag_file.exists():
+            print(f"Tag '{tag_name}' already exists")
+            return
+
+        if annotated and message:
+            # Create annotated tag
+            tag_obj = Tag(
+                object_hash=target_commit,
+                object_type="commit",
+                tag_name=tag_name,
+                tagger="PyGit User <user@pygit.com>",
+                message=message
+            )
+            tag_hash = self.store_object(tag_obj)
+            tag_file.write_text(tag_hash + "\n")
+            print(f"Created annotated tag '{tag_name}' at {target_commit[:7]}")
+        else:
+            # Create lightweight tag
+            tag_file.write_text(target_commit + "\n")
+            print(f"Created tag '{tag_name}' at {target_commit[:7]}")
+
+
+
+
+
+
+
+
+
+
+
 
