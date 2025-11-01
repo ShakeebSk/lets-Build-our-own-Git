@@ -1402,3 +1402,60 @@ class Repository:
                 print(f"\nBinary files differ: {file_path}")
 
 
+    def diff_commit_working(self, commit_hash: str):
+        """Diff between a commit and working directory"""
+        try:
+            commit_index = self.get_commit_file_index(commit_hash)
+        except:
+            print(f"Commit {commit_hash} not found")
+            return
+
+        working_files = {}
+        for item in self.get_all_files():
+            rel_path = str(item.relative_to(self.path))
+            working_files[rel_path] = item
+
+        all_files = set(commit_index.keys()) | set(working_files.keys())
+
+        for file_path in sorted(all_files):
+            blob_hash = commit_index.get(file_path)
+            working_file = working_files.get(file_path)
+
+            if blob_hash and not working_file:
+                print(f"\ndiff --git a/{file_path} b/{file_path}")
+                print(f"deleted file")
+            elif not blob_hash and working_file:
+                print(f"\ndiff --git a/{file_path} b/{file_path}")
+                print(f"new file")
+            elif blob_hash and working_file:
+                try:
+                    blob_obj = self.load_object(blob_hash)
+                    old_content = blob_obj.content.decode('utf-8', errors='ignore')
+                    new_content = working_file.read_bytes().decode('utf-8', errors='ignore')
+                    
+                    if old_content != new_content:
+                        print(f"\ndiff --git a/{file_path} b/{file_path}")
+                        print(f"--- a/{file_path}")
+                        print(f"+++ b/{file_path}")
+                        
+                        diff = difflib.unified_diff(
+                            old_content.splitlines(keepends=True),
+                            new_content.splitlines(keepends=True),
+                            lineterm=''
+                        )
+                        
+                        for line in diff:
+                            print(line.rstrip())
+                except:
+                    print(f"\nBinary files differ: {file_path}")
+
+
+
+
+
+
+
+
+
+
+
