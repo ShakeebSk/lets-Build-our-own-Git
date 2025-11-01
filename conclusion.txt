@@ -1,0 +1,8 @@
+By this we have done the testing of all the features 
+
+usage: git.py [-h] {init,add,commit,checkout,branch,log,status,merge,cherry-pick,stash,tag,reset,diff} ...
+
+all of the above are completed 
+
+now feel free to add any new feature if u want 
+and probably there are lot edge cases that w can handle
