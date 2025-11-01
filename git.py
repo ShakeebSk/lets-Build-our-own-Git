@@ -1451,7 +1451,49 @@ class Repository:
 
 
 
+    
+    def diff_commits(self, commit1: str, commit2: str):
+        """Diff between two commits"""
+        try:
+            index1 = self.get_commit_file_index(commit1)
+            index2 = self.get_commit_file_index(commit2)
+        except:
+            print("One or both commits not found")
+            return
 
+        all_files = set(index1.keys()) | set(index2.keys())
+
+        for file_path in sorted(all_files):
+            hash1 = index1.get(file_path)
+            hash2 = index2.get(file_path)
+
+            if hash1 and not hash2:
+                print(f"\ndiff --git a/{file_path} b/{file_path}")
+                print(f"deleted file")
+            elif not hash1 and hash2:
+                print(f"\ndiff --git a/{file_path} b/{file_path}")
+                print(f"new file")
+            elif hash1 != hash2:
+                try:
+                    blob1 = self.load_object(hash1)
+                    blob2 = self.load_object(hash2)
+                    content1 = blob1.content.decode('utf-8', errors='ignore')
+                    content2 = blob2.content.decode('utf-8', errors='ignore')
+                    
+                    print(f"\ndiff --git a/{file_path} b/{file_path}")
+                    print(f"--- a/{file_path}")
+                    print(f"+++ b/{file_path}")
+                    
+                    diff = difflib.unified_diff(
+                        content1.splitlines(keepends=True),
+                        content2.splitlines(keepends=True),
+                        lineterm=''
+                    )
+                    
+                    for line in diff:
+                        print(line.rstrip())
+                except:
+                    print(f"\nBinary files differ: {file_path}")
 
 
 
