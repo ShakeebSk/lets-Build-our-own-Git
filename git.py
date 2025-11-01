@@ -1497,7 +1497,208 @@ class Repository:
 
 
 
+    def main():
+    parser = argparse.ArgumentParser(description="PyGit - A full-featured Git clone!")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    # init
+    subparsers.add_parser("init", help="Initialize a new repository")
+
+    # add
+    add_parser = subparsers.add_parser("add", help="Add files to staging area")
+    add_parser.add_argument("paths", nargs="+", help="Files/directories to add")
+
+    # commit
+    commit_parser = subparsers.add_parser("commit", help="Create a new commit")
+    commit_parser.add_argument("-m", "--message", help="Commit message", required=True)
+    commit_parser.add_argument("--author", help="Author name and email")
+
+    # checkout
+    checkout_parser = subparsers.add_parser("checkout", help="Switch branches or restore files")
+    checkout_parser.add_argument("target", help="Branch name or commit hash")
+    checkout_parser.add_argument("-b", "--create-branch", action="store_true", help="Create new branch")
+
+    # branch
+    branch_parser = subparsers.add_parser("branch", help="List or manage branches")
+    branch_parser.add_argument("name", nargs="?", help="Branch name")
+    branch_parser.add_argument("-d", "--delete", action="store_true", help="Delete branch")
+
+    # log
+    log_parser = subparsers.add_parser("log", help="Show commit history")
+    log_parser.add_argument("-n", "--max-count", type=int, default=10, help="Limit commits shown")
+
+    # status
+    subparsers.add_parser("status", help="Show repository status")
+
+    # merge
+    merge_parser = subparsers.add_parser("merge", help="Merge branches")
+    merge_parser.add_argument("branch", help="Branch to merge")
+    merge_parser.add_argument("--no-ff", action="store_true", help="Create merge commit even if fast-forward")
+
+    # cherry-pick
+    cherry_parser = subparsers.add_parser("cherry-pick", help="Apply changes from commit")
+    cherry_parser.add_argument("commit", help="Commit hash to cherry-pick")
+
+    # stash
+    stash_parser = subparsers.add_parser("stash", help="Stash changes")
+    stash_subparsers = stash_parser.add_subparsers(dest="stash_command")
+    
+    stash_save = stash_subparsers.add_parser("save", help="Save changes to stash")
+    stash_save.add_argument("-m", "--message", help="Stash message")
+    
+    stash_subparsers.add_parser("list", help="List stashes")
+    
+    stash_pop = stash_subparsers.add_parser("pop", help="Apply and remove stash")
+    stash_pop.add_argument("index", nargs="?", type=int, default=0)
+    
+    stash_apply = stash_subparsers.add_parser("apply", help="Apply stash")
+    stash_apply.add_argument("index", nargs="?", type=int, default=0)
+    
+    stash_drop = stash_subparsers.add_parser("drop", help="Remove stash")
+    stash_drop.add_argument("index", nargs="?", type=int, default=0)
+
+    # tag
+    tag_parser = subparsers.add_parser("tag", help="Manage tags")
+    tag_parser.add_argument("name", nargs="?", help="Tag name")
+    tag_parser.add_argument("-d", "--delete", action="store_true", help="Delete tag")
+    tag_parser.add_argument("-a", "--annotated", action="store_true", help="Create annotated tag")
+    tag_parser.add_argument("-m", "--message", help="Tag message")
+    tag_parser.add_argument("--commit", help="Commit to tag")
+
+    # reset
+    reset_parser = subparsers.add_parser("reset", help="Reset current HEAD")
+    reset_parser.add_argument("commit", help="Commit hash to reset to")
+    reset_parser.add_argument("--soft", action="store_true", help="Keep index and working directory")
+    reset_parser.add_argument("--mixed", action="store_true", help="Keep working directory only (default)")
+    reset_parser.add_argument("--hard", action="store_true", help="Reset everything")
+
+    # diff
+    diff_parser = subparsers.add_parser("diff", help="Show changes")
+    diff_parser.add_argument("target1", nargs="?", help="First commit/reference")
+    diff_parser.add_argument("target2", nargs="?", help="Second commit/reference")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        return
+
+    repo = Repository()
+    
+    try:
+        if args.command == "init":
+            if not repo.init():
+                print("Repository already exists")
+                return
+
+        elif args.command == "add":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            for path in args.paths:
+                repo.add_path(path)
+
+        elif args.command == "commit":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            author = args.author or "PyGit user <user@pygit.com>"
+            repo.commit(args.message, author)
+
+        elif args.command == "checkout":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.checkout(args.target, args.create_branch)
+
+        elif args.command == "branch":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.branch(args.name, args.delete)
+
+        elif args.command == "log":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.log(args.max_count)
+
+        elif args.command == "status":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.status()
+
+        elif args.command == "merge":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.merge(args.branch, args.no_ff)
+
+        elif args.command == "cherry-pick":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.cherry_pick(args.commit)
+
+        elif args.command == "stash":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            
+            if not args.stash_command or args.stash_command == "save":
+                message = getattr(args, 'message', None)
+                repo.stash(message)
+            elif args.stash_command == "list":
+                repo.stash_list()
+            elif args.stash_command == "pop":
+                repo.stash_pop(args.index)
+            elif args.stash_command == "apply":
+                repo.stash_apply(args.index)
+            elif args.stash_command == "drop":
+                repo.stash_drop(args.index)
+
+        elif args.command == "tag":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            
+            if args.delete and args.name:
+                repo.tag_delete(args.name)
+            elif args.name:
+                commit = args.commit or None
+                repo.tag_create(args.name, commit, args.message, args.annotated)
+            else:
+                repo.tag_list()
+
+        elif args.command == "reset":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            
+            mode = "mixed"  # default
+            if args.soft:
+                mode = "soft"
+            elif args.hard:
+                mode = "hard"
+            
+            repo.reset(args.commit, mode)
+
+        elif args.command == "diff":
+            if not repo.git_dir.exists():
+                print("Not a git repository")
+                return
+            repo.diff(args.target1, args.target2)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
 
 
 
